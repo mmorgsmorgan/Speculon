@@ -50,7 +50,7 @@ $$ LANGUAGE plpgsql;
 
 -- Core topic table
 CREATE TABLE IF NOT EXISTS ai_topics (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   label TEXT NOT NULL,
   summary TEXT NOT NULL,
   entities JSONB NOT NULL DEFAULT '[]'::jsonb,
@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS ai_topics (
 
 -- Normalized source messages
 CREATE TABLE IF NOT EXISTS ai_messages (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   source ai_source_type NOT NULL,
   source_message_id TEXT NOT NULL,
   source_chat_id TEXT,
@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS ai_messages (
 
 -- Topic -> message mapping
 CREATE TABLE IF NOT EXISTS ai_topic_messages (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   topic_id UUID NOT NULL REFERENCES ai_topics(id) ON DELETE CASCADE,
   message_id UUID NOT NULL REFERENCES ai_messages(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS ai_topic_messages (
 
 -- Generated proposals pending admin decision
 CREATE TABLE IF NOT EXISTS market_proposals (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   topic_id UUID NOT NULL REFERENCES ai_topics(id) ON DELETE RESTRICT,
   title TEXT NOT NULL,
   description TEXT NOT NULL,
@@ -111,7 +111,7 @@ CREATE TABLE IF NOT EXISTS market_proposals (
 
 -- Feedback events to support calibration and retraining
 CREATE TABLE IF NOT EXISTS ai_feedback_events (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   market_id UUID REFERENCES markets(id) ON DELETE SET NULL,
   proposal_id UUID REFERENCES market_proposals(id) ON DELETE SET NULL,
   event_type TEXT NOT NULL,
@@ -122,7 +122,7 @@ CREATE TABLE IF NOT EXISTS ai_feedback_events (
 
 -- Ingestion source config + allowlist state
 CREATE TABLE IF NOT EXISTS ai_ingestion_sources (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   source ai_source_type NOT NULL,
   source_kind ai_source_kind NOT NULL,
   external_id TEXT NOT NULL,
@@ -139,7 +139,7 @@ CREATE TABLE IF NOT EXISTS ai_ingestion_sources (
 
 -- Policy decision audit log
 CREATE TABLE IF NOT EXISTS ai_policy_events (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   source ai_source_type,
   topic_id UUID REFERENCES ai_topics(id) ON DELETE SET NULL,
   proposal_id UUID REFERENCES market_proposals(id) ON DELETE SET NULL,

@@ -2,7 +2,7 @@
 -- Date: 2026-02-18
 
 CREATE TABLE IF NOT EXISTS ai_model_configs (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   model_name TEXT NOT NULL,
   version INT NOT NULL DEFAULT 1,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,

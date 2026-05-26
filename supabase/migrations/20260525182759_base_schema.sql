@@ -2,11 +2,11 @@
 -- Execute this in Supabase SQL Editor
 
 -- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- gen_random_uuid() is built into Postgres 13+, no extension needed
 
 -- Users Table
 CREATE TABLE IF NOT EXISTS users (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   username VARCHAR(50) UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
   role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'member', 'viewer')) DEFAULT 'member',
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- Markets Table
 CREATE TABLE IF NOT EXISTS markets (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   creator_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   question TEXT NOT NULL,
   description TEXT,
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS markets (
 
 -- Outcomes Table
 CREATE TABLE IF NOT EXISTS outcomes (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   market_id UUID NOT NULL REFERENCES markets(id) ON DELETE CASCADE,
   outcome_text TEXT NOT NULL,
   total_staked DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
@@ -50,7 +50,7 @@ REFERENCES outcomes(id);
 
 -- Predictions Table
 CREATE TABLE IF NOT EXISTS predictions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   market_id UUID NOT NULL REFERENCES markets(id) ON DELETE CASCADE,
   outcome_id UUID NOT NULL REFERENCES outcomes(id) ON DELETE CASCADE,
@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS predictions (
 
 -- Approval Votes Table
 CREATE TABLE IF NOT EXISTS approval_votes (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   market_id UUID NOT NULL REFERENCES markets(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   vote VARCHAR(10) NOT NULL CHECK (vote IN ('approve', 'reject')),
@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS approval_votes (
 
 -- Disputes Table
 CREATE TABLE IF NOT EXISTS disputes (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   market_id UUID NOT NULL REFERENCES markets(id) ON DELETE CASCADE,
   initiated_by UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   reason TEXT NOT NULL,
@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS disputes (
 
 -- Resolution Votes Table (for community voting)
 CREATE TABLE IF NOT EXISTS resolution_votes (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   market_id UUID NOT NULL REFERENCES markets(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   outcome_id UUID NOT NULL REFERENCES outcomes(id) ON DELETE CASCADE,
@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS resolution_votes (
 
 -- Activity Logs Table
 CREATE TABLE IF NOT EXISTS activity_logs (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE SET NULL,
   action_type VARCHAR(100) NOT NULL,
   target_id UUID,
