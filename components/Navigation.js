@@ -38,15 +38,8 @@ export default function Navigation() {
         <div className="flex items-center justify-between h-20">
           {/* Left: Logo + section indicator */}
           <div className="flex items-center gap-10">
-            <Link href="/" className="flex items-center gap-3">
-              <div
-                className="w-7 h-7 rounded-md flex items-center justify-center"
-                style={{ background: 'var(--accent)' }}
-                aria-hidden
-              >
-                <div className="w-2.5 h-2.5 rounded-full" style={{ background: 'var(--card)' }} />
-              </div>
-              <Brand className="text-[15px]" />
+            <Link href="/" className="flex items-center">
+              <Brand className="text-[15px]" size={28} />
             </Link>
 
             <div className="hidden md:flex items-center gap-6">

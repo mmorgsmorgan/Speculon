@@ -19,7 +19,8 @@ export const metadata = {
   title: "Speculon — Prediction Market",
   description: "A community-run prediction market on Rialo.",
   icons: {
-    icon: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23F4F0E6%22/><circle cx=%2250%22 cy=%2250%22 r=%2218%22 fill=%22%234F766B%22/></svg>',
+    icon: '/speculon-logo.png',
+    apple: '/speculon-logo.png',
   },
 };
 

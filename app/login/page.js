@@ -30,14 +30,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center px-6 py-16">
       <div className="w-full max-w-md">
         <div className="mb-10">
-          <div className="flex items-center gap-3 mb-10">
-            <div
-              className="w-7 h-7 rounded-md flex items-center justify-center"
-              style={{ background: 'var(--accent)' }}
-            >
-              <div className="w-2.5 h-2.5 rounded-full" style={{ background: 'var(--card)' }} />
-            </div>
-            <Brand withRialo className="text-[15px]" />
+          <div className="flex items-center mb-10">
+            <Brand withRialo className="text-[15px]" size={32} />
           </div>
 
           <p className="section-marker mb-5">
