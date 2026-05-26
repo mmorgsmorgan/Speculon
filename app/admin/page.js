@@ -467,7 +467,7 @@ export default function AdminDashboard() {
                             <div className="flex-1">
                               <p className="text-white font-medium mb-1">{market.question}</p>
                               <p className="text-zinc-400 text-sm">
-                                {market.outcomes?.length} outcomes • Total pool: {market.outcomes?.reduce((sum, o) => sum + parseFloat(o.total_staked || 0), 0).toFixed(0)} pts
+                                {market.outcomes?.length} outcomes • Total pool: {market.outcomes?.reduce((sum, o) => sum + parseFloat(o.total_staked || 0), 0).toFixed(0)} LO
                               </p>
                             </div>
                             <button
@@ -537,15 +537,15 @@ export default function AdminDashboard() {
                     </div>
                     <div className="glass-dark p-4 rounded-xl">
                       <p className="text-zinc-500 text-sm mb-1">Total Staked</p>
-                      <p className="text-white font-bold text-2xl">{statistics.predictions.totalStaked.toFixed(0)} pts</p>
+                      <p className="text-white font-bold text-2xl">{statistics.predictions.totalStaked.toFixed(0)} LO</p>
                     </div>
                     <div className="glass-dark p-4 rounded-xl">
                       <p className="text-zinc-500 text-sm mb-1">Total Paid Out</p>
-                      <p className="text-emerald-400 font-bold text-2xl">{statistics.predictions.totalPaidOut.toFixed(0)} pts</p>
+                      <p className="text-emerald-400 font-bold text-2xl">{statistics.predictions.totalPaidOut.toFixed(0)} LO</p>
                     </div>
                     <div className="glass-dark p-4 rounded-xl">
                       <p className="text-zinc-500 text-sm mb-1">Avg Stake</p>
-                      <p className="text-zinc-400 font-bold text-2xl">{statistics.predictions.averageStake.toFixed(0)} pts</p>
+                      <p className="text-zinc-400 font-bold text-2xl">{statistics.predictions.averageStake.toFixed(0)} LO</p>
                     </div>
                   </div>
                 </div>
@@ -568,11 +568,11 @@ export default function AdminDashboard() {
                     </div>
                     <div className="glass-dark p-4 rounded-xl">
                       <p className="text-zinc-500 text-sm mb-1">Total Balance</p>
-                      <p className="text-white font-bold text-2xl">{statistics.users.totalBalance.toFixed(0)} pts</p>
+                      <p className="text-white font-bold text-2xl">{statistics.users.totalBalance.toFixed(0)} LO</p>
                     </div>
                     <div className="glass-dark p-4 rounded-xl">
                       <p className="text-zinc-500 text-sm mb-1">Avg Balance</p>
-                      <p className="text-zinc-400 font-bold text-2xl">{statistics.users.averageBalance.toFixed(0)} pts</p>
+                      <p className="text-zinc-400 font-bold text-2xl">{statistics.users.averageBalance.toFixed(0)} LO</p>
                     </div>
                     <div className="glass-dark p-4 rounded-xl">
                       <p className="text-zinc-500 text-sm mb-1">Admins</p>
@@ -725,7 +725,7 @@ export default function AdminDashboard() {
                           <div>
                             <p className="text-white font-medium">{usr.username}</p>
                             <p className="text-zinc-400 text-sm">
-                              <span className="capitalize">{usr.role}</span> • {parseFloat(usr.points_balance || 0).toFixed(0)} pts
+                              <span className="capitalize">{usr.role}</span> • {parseFloat(usr.points_balance || 0).toFixed(0)} LO
                             </p>
                           </div>
                         </div>
@@ -804,7 +804,7 @@ export default function AdminDashboard() {
 
             <div className="mb-6">
               <label className="block text-zinc-400 text-sm mb-2">
-                Bonus Amount (pts)
+                Bonus Amount (LO Points)
               </label>
               <input
                 type="number"

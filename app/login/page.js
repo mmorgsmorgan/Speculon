@@ -4,12 +4,13 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
-import { Loader2, LogIn, User, Lock } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
+import Brand from '@/components/Brand';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -19,138 +20,113 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     const result = await login(username, password);
-
-    if (result.success) {
-      router.push('/');
-    } else {
-      setError(result.error);
-    }
-
+    if (result.success) router.push('/');
+    else setError(result.error);
     setLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-charcoal to-deep-emerald p-4">
-      {/* Background decorative elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-emerald/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary-blue/10 rounded-full blur-3xl"></div>
-      </div>
-
-      <div className="w-full max-w-md relative z-10">
-        {/* Logo/Brand */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl overflow-hidden mb-4 shadow-lg">
-            <Image 
-              src="/logo.png" 
-              alt="Ritual Logo" 
-              width={64} 
-              height={64}
-              className="w-16 h-16"
-            />
+    <div className="min-h-screen flex items-center justify-center px-6 py-16">
+      <div className="w-full max-w-md">
+        <div className="mb-10">
+          <div className="flex items-center gap-3 mb-10">
+            <div
+              className="w-7 h-7 rounded-md flex items-center justify-center"
+              style={{ background: 'var(--accent)' }}
+            >
+              <div className="w-2.5 h-2.5 rounded-full" style={{ background: 'var(--card)' }} />
+            </div>
+            <Brand withRialo className="text-[15px]" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">
-            Ritual Prediction Market
+
+          <p className="section-marker mb-5">
+            <span className="section-marker-num">§</span> 01 / SIGN IN
+          </p>
+          <h1 className="editorial-heading" style={{ fontSize: 'clamp(36px, 5vw, 52px)' }}>
+            Welcome <span className="editorial-accent">back.</span>
           </h1>
-          <p className="text-slate-gray">
-            Enter your credentials to continue
+          <p className="mt-4 text-[15px]" style={{ color: 'var(--text-muted)' }}>
+            Enter your credentials to continue.
           </p>
         </div>
 
-        {/* Login Form */}
-        <div className="glass-dark p-8 rounded-2xl shadow-xl border border-primary-emerald/20">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Username Input */}
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-light-emerald mb-2">
-                Username
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-slate-gray" />
-                </div>
-                <input
-                  id="username"
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-gray focus:outline-none focus:border-primary-emerald focus:ring-2 focus:ring-primary-emerald/20 transition-all"
-                  placeholder="Enter your username"
-                  required
-                  autoComplete="username"
-                />
-              </div>
-            </div>
-
-            {/* Password Input */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-light-emerald mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-slate-gray" />
-                </div>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-gray focus:outline-none focus:border-primary-emerald focus:ring-2 focus:ring-primary-emerald/20 transition-all"
-                  placeholder="Enter your password"
-                  required
-                  autoComplete="current-password"
-                />
-              </div>
-            </div>
-
-            {/* Error Message */}
-            {error && (
-              <div className="bg-hot-coral/10 border border-hot-coral/30 rounded-xl p-3 text-hot-coral text-sm">
-                {error}
-              </div>
-            )}
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full gradient-primary text-white font-semibold py-3 px-6 rounded-xl shadow-lg shadow-emerald hover:shadow-xl hover:shadow-emerald hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Logging in...
-                </>
-              ) : (
-                <>
-                  <LogIn className="w-5 h-5" />
-                  Log In
-                </>
-              )}
-            </button>
-          </form>
-
-          {/* Register Link */}
-          <div className="mt-6 text-center">
-            <p className="text-slate-gray text-sm">
-              Don't have an account?{' '}
-              <Link
-                href="/register"
-                className="text-primary-emerald hover:text-light-emerald font-semibold transition-colors"
-              >
-                Sign up
-              </Link>
-            </p>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label htmlFor="username" className="eyebrow block mb-2">
+              USERNAME
+            </label>
+            <input
+              id="username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="input-paper"
+              placeholder="your-handle"
+              required
+              autoComplete="username"
+            />
           </div>
-        </div>
 
-        {/* Footer Note */}
-        <div className="mt-6 text-center text-xs text-slate-gray">
-          <p>🎮 Built for community choices, curiosity, and fun!</p>
-        </div>
+          <div>
+            <label htmlFor="password" className="eyebrow block mb-2">
+              PASSWORD
+            </label>
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="input-paper pr-12"
+                placeholder="••••••••"
+                required
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((s) => !s)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-pressed={showPassword}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-md"
+                style={{ color: 'var(--text-muted)' }}
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          {error && (
+            <div
+              className="text-[13px] px-4 py-3 rounded-lg"
+              style={{ border: '1px solid var(--border)', color: 'var(--danger)' }}
+            >
+              {error}
+            </div>
+          )}
+
+          <button type="submit" disabled={loading} className="btn-mint w-full">
+            {loading ? (
+              <span className="inline-flex items-center justify-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" /> Signing in…
+              </span>
+            ) : (
+              'Sign in'
+            )}
+          </button>
+        </form>
+
+        <p className="mt-8 text-[13px]" style={{ color: 'var(--text-muted)' }}>
+          Don't have an account?{' '}
+          <Link
+            href="/register"
+            className="underline underline-offset-4"
+            style={{ color: 'var(--accent)' }}
+          >
+            Create one
+          </Link>
+        </p>
       </div>
     </div>
   );

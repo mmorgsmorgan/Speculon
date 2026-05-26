@@ -9,10 +9,7 @@ export default function ApprovalVoteModal({ market, userId, onClose, onVoteSucce
   const [error, setError] = useState('');
 
   const handleVote = async () => {
-    if (!vote) {
-      setError('Please select approve or reject');
-      return;
-    }
+    if (!vote) return setError('Please select approve or reject');
 
     setLoading(true);
     setError('');
@@ -21,15 +18,10 @@ export default function ApprovalVoteModal({ market, userId, onClose, onVoteSucce
       const response = await fetch(`/api/markets/${market.id}/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, vote })
+        body: JSON.stringify({ userId, vote }),
       });
-
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to vote');
-      }
-
+      if (!response.ok) throw new Error(data.error || 'Failed to vote');
       onVoteSuccess(data);
       onClose();
     } catch (err) {
@@ -38,111 +30,98 @@ export default function ApprovalVoteModal({ market, userId, onClose, onVoteSucce
     }
   };
 
+  const tile = (key, Icon, label, sub) => {
+    const isSelected = vote === key;
+    return (
+      <button
+        type="button"
+        onClick={() => setVote(key)}
+        className="p-5 rounded-xl text-left transition-colors"
+        style={{
+          border: '1px solid ' + (isSelected ? 'var(--accent)' : 'var(--border)'),
+          background: isSelected ? 'var(--accent-soft)' : 'transparent',
+        }}
+      >
+        <Icon
+          className="w-6 h-6 mb-3"
+          style={{ color: isSelected ? 'var(--accent-ink)' : 'var(--text-muted)' }}
+        />
+        <p className="text-[15px] font-medium" style={{ color: isSelected ? 'var(--accent-ink)' : 'var(--text)' }}>
+          {label}
+        </p>
+        <p className="mt-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>
+          {sub}
+        </p>
+      </button>
+    );
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="glass-heavy w-full max-w-md p-6 rounded-2xl border border-primary-emerald/30 shadow-xl">
-        {/* Header */}
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(17, 17, 17, 0.55)', backdropFilter: 'blur(4px)' }}
+    >
+      <div
+        className="w-full max-w-md rounded-3xl p-8"
+        style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
+      >
         <div className="flex justify-between items-start mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-white mb-2">
-              Vote on Market
-            </h2>
-            <p className="text-slate-gray text-sm">
-              Help decide if this market should go live
+            <p className="section-marker mb-2">
+              <span className="section-marker-num">§</span> VOTE
+            </p>
+            <h2 className="text-[22px] font-medium tracking-tight">Approve this market</h2>
+            <p className="mt-2 text-[13px]" style={{ color: 'var(--text-muted)' }}>
+              Help decide if this market should go live.
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="text-slate-gray hover:text-white transition-colors"
-          >
-            <X className="w-6 h-6" />
+          <button type="button" onClick={onClose} aria-label="Close">
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Market Question */}
-        <div className="bg-white/5 rounded-xl p-4 mb-6 border border-white/10">
-          <p className="text-white text-sm font-medium line-clamp-3">
-            {market.question}
+        <div className="surface-card-sm mb-6" style={{ background: 'var(--bg-sunken)' }}>
+          <p className="eyebrow mb-2">QUESTION</p>
+          <p className="text-[14px] font-medium line-clamp-3">{market.question}</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          {tile('approve', ThumbsUp, 'Approve', 'Market should go live')}
+          {tile('reject', ThumbsDown, 'Reject', 'Market should not go live')}
+        </div>
+
+        <div className="surface-card-sm mb-6">
+          <p className="eyebrow-strong mb-2">NOTE</p>
+          <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
+            One vote per user. Markets need 10 approvals to go live. Admins can override.
           </p>
         </div>
 
-        {/* Vote Options */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <button
-            onClick={() => setVote('approve')}
-            className={`
-              p-4 rounded-xl border-2 transition-all
-              ${vote === 'approve'
-                ? 'border-primary-emerald bg-primary-emerald/20 shadow-lg shadow-emerald/30'
-                : 'border-white/10 hover:border-primary-emerald/50 bg-white/5'
-              }
-            `}
-          >
-            <ThumbsUp className={`w-8 h-8 mx-auto mb-2 ${vote === 'approve' ? 'text-primary-emerald' : 'text-slate-gray'}`} />
-            <p className={`font-semibold ${vote === 'approve' ? 'text-primary-emerald' : 'text-white'}`}>
-              Approve
-            </p>
-            <p className="text-xs text-slate-gray mt-1">
-              Market should go live
-            </p>
-          </button>
-
-          <button
-            onClick={() => setVote('reject')}
-            className={`
-              p-4 rounded-xl border-2 transition-all
-              ${vote === 'reject'
-                ? 'border-hot-coral bg-hot-coral/20 shadow-lg shadow-coral/30'
-                : 'border-white/10 hover:border-hot-coral/50 bg-white/5'
-              }
-            `}
-          >
-            <ThumbsDown className={`w-8 h-8 mx-auto mb-2 ${vote === 'reject' ? 'text-hot-coral' : 'text-slate-gray'}`} />
-            <p className={`font-semibold ${vote === 'reject' ? 'text-hot-coral' : 'text-white'}`}>
-              Reject
-            </p>
-            <p className="text-xs text-slate-gray mt-1">
-              Market should not go live
-            </p>
-          </button>
-        </div>
-
-        {/* Info */}
-        <div className="bg-primary-blue/10 border border-primary-blue/30 rounded-xl p-3 mb-6">
-          <p className="text-primary-blue text-xs">
-            <strong>Note:</strong> You can only vote once. Markets need 10 approvals to go live. 
-            Admins can override voting at any time.
-          </p>
-        </div>
-
-        {/* Error */}
         {error && (
-          <div className="mb-4 bg-hot-coral/10 border border-hot-coral/30 rounded-xl p-3 text-hot-coral text-sm">
+          <div
+            className="mb-4 text-[13px] px-4 py-3 rounded-lg"
+            style={{ border: '1px solid var(--border)', color: 'var(--danger)' }}
+          >
             {error}
           </div>
         )}
 
-        {/* Actions */}
         <div className="flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 px-6 py-3 rounded-xl border border-white/10 text-white hover:bg-white/5 transition-all font-medium"
-            disabled={loading}
-          >
+          <button type="button" onClick={onClose} className="btn-outline flex-1" disabled={loading}>
             Cancel
           </button>
           <button
+            type="button"
             onClick={handleVote}
             disabled={!vote || loading}
-            className="flex-1 gradient-primary text-white font-semibold py-3 px-6 rounded-xl shadow-lg shadow-emerald hover:shadow-xl hover:shadow-emerald hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="btn-mint flex-1"
           >
             {loading ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Voting...
-              </>
+              <span className="inline-flex items-center justify-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" /> Voting…
+              </span>
             ) : (
-              'Submit Vote'
+              'Submit vote'
             )}
           </button>
         </div>

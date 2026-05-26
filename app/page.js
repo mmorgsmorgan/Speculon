@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import MarketCard from '@/components/MarketCard';
-import { Loader2, TrendingUp, Search } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
 
 export default function Home() {
   const { user, loading: authLoading } = useAuth();
@@ -18,22 +18,15 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login');
-    }
+    if (!authLoading && !user) router.push('/login');
   }, [user, authLoading, router]);
 
   useEffect(() => {
-    if (user) {
-      fetchMarkets();
-    }
+    if (user) fetchMarkets();
   }, [user, activeTab]);
 
-  // Fetch aggregate counts once on mount
   useEffect(() => {
-    if (user) {
-      fetchMarketCounts();
-    }
+    if (user) fetchMarketCounts();
   }, [user]);
 
   const fetchMarkets = async () => {
@@ -54,174 +47,244 @@ export default function Home() {
     try {
       const [allRes, liveRes] = await Promise.all([
         fetch('/api/markets?limit=1'),
-        fetch('/api/markets?status=live&limit=1')
+        fetch('/api/markets?status=live&limit=1'),
       ]);
       const [allData, liveData] = await Promise.all([allRes.json(), liveRes.json()]);
       setMarketCounts({
         total: allData.pagination?.totalCount || allData.markets?.length || 0,
-        live: liveData.pagination?.totalCount || liveData.markets?.length || 0
+        live: liveData.pagination?.totalCount || liveData.markets?.length || 0,
       });
     } catch (error) {
       console.error('Failed to fetch market counts:', error);
     }
   };
 
-  const filteredMarkets = markets.filter(market => {
+  const filteredMarkets = markets.filter((market) => {
     if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
+    const q = searchQuery.toLowerCase();
     return (
-      market.question?.toLowerCase().includes(query) ||
-      market.description?.toLowerCase().includes(query) ||
-      market.creator?.username?.toLowerCase().includes(query)
+      market.question?.toLowerCase().includes(q) ||
+      market.description?.toLowerCase().includes(q) ||
+      market.creator?.username?.toLowerCase().includes(q)
     );
   });
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-black via-charcoal to-deep-emerald flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-primary-emerald animate-spin" />
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin" style={{ color: 'var(--accent)' }} />
       </div>
     );
   }
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   const tabs = [
-    { id: 'live', label: 'Live', color: 'emerald' },
-    { id: 'proposed', label: 'Proposed', color: 'orange' },
-    { id: 'closed', label: 'Closed', color: 'gray' },
-    { id: 'all', label: 'All', color: 'blue' }
+    { id: 'live', label: 'Live' },
+    { id: 'proposed', label: 'Proposed' },
+    { id: 'closed', label: 'Closed' },
+    { id: 'all', label: 'All' },
   ];
 
+  const short = (s) => (s ? `${s.slice(0, 6)}…` : '—');
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-charcoal to-deep-emerald">
+    <div className="min-h-screen">
       <Navigation />
-      
-      <main className="container mx-auto px-6 py-8">
-        {/* Hero Section */}
-        <div className="glass-dark p-8 rounded-2xl border border-primary-emerald/20 mb-8">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl font-bold text-white mb-4">
-              Welcome, <span className="text-primary-emerald">{user.username}</span>!
+
+      <main className="container mx-auto px-8 lg:px-12 py-16">
+        {/* Hero */}
+        <section className="grid lg:grid-cols-12 gap-12 items-start mb-20">
+          <div className="lg:col-span-7">
+            <p className="eyebrow mb-6">PLAYGROUND / PREDICTIONS</p>
+            <h1 className="editorial-heading">
+              Your session &<br />
+              <span className="editorial-accent">prediction wallet.</span>
             </h1>
-            <p className="text-slate-gray text-lg mb-6">
-              Predict outcomes, earn points, and compete with the Ritual community.
-            </p>
-            
-            {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white/5 rounded-xl p-4 border border-primary-emerald/10">
-                <p className="text-slate-gray text-sm mb-1">Your Balance</p>
-                <p className="text-2xl font-bold text-bright-lime font-mono">
-                  {user.points_balance} pts
-                </p>
-              </div>
-              <div className="bg-white/5 rounded-xl p-4 border border-primary-blue/10">
-                <p className="text-slate-gray text-sm mb-1">Total Markets</p>
-                <p className="text-2xl font-bold text-primary-blue font-mono">
-                  {marketCounts.total}
-                </p>
-              </div>
-              <div className="bg-white/5 rounded-xl p-4 border border-sunset-orange/10">
-                <p className="text-slate-gray text-sm mb-1">Live Markets</p>
-                <p className="text-2xl font-bold text-sunset-orange font-mono">
-                  {marketCounts.live}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Search and Filter Section */}
-        <div className="mb-6">
-          <div className="glass-dark p-4 rounded-2xl border border-primary-emerald/20">
-            <div className="flex items-center gap-3">
-              <Search className="w-5 h-5 text-slate-gray" />
-              <input
-                type="text"
-                placeholder="Search markets by question, description, or creator..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 bg-transparent text-white placeholder-slate-gray focus:outline-none"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="text-slate-gray hover:text-white text-sm"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="glass-dark p-2 rounded-2xl border border-primary-emerald/20 mb-6 inline-flex gap-1">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`
-                px-6 py-2 rounded-xl font-medium text-sm transition-all
-                ${activeTab === tab.id 
-                  ? 'gradient-primary text-white shadow-md shadow-emerald' 
-                  : 'text-slate-gray hover:text-white hover:bg-white/5'
-                }
-              `}
+            <p
+              className="mt-8 max-w-xl text-[18px] leading-relaxed"
+              style={{ color: 'var(--text-muted)' }}
             >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+              A single Speculon community account ties your identity, your LO Points balance,
+              and the markets you've staked on. Predict outcomes, earn LO Points, and compete
+              with the community.
+            </p>
 
-        {/* Markets Grid */}
-        {loading ? (
-          <div className="flex justify-center py-16">
-            <Loader2 className="w-12 h-12 text-primary-emerald animate-spin" />
+            <div className="mt-10 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => router.push('/create')}
+                className="btn-mint"
+              >
+                Create market
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push('/predictions')}
+                className="btn-outline"
+              >
+                My predictions
+              </button>
+            </div>
           </div>
-        ) : filteredMarkets.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="glass-dark inline-block px-8 py-6 rounded-2xl border border-primary-emerald/20">
-              <TrendingUp className="w-12 h-12 text-primary-emerald mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-white mb-2">
-                {searchQuery ? 'No Markets Found' : 'No Markets Yet'}
-              </h2>
-              <p className="text-slate-gray mb-4">
-                {searchQuery 
-                  ? 'Try adjusting your search query'
-                  : 'Be the first to create a prediction market!'}
+
+          {/* Identity + Wallet cards */}
+          <div className="lg:col-span-5 space-y-6">
+            <article className="surface-card">
+              <div className="flex items-center justify-between mb-6">
+                <span className="section-marker">
+                  <span className="section-marker-num">01</span> / SESSION
+                </span>
+                <span className="eyebrow">IDENTITY</span>
+              </div>
+              <dl className="grid grid-cols-[110px_1fr] gap-y-4 gap-x-6 text-[14px]">
+                <dt className="eyebrow self-center">USERNAME</dt>
+                <dd className="font-medium">{user.username}</dd>
+                <dt className="eyebrow self-center">USER ID</dt>
+                <dd className="font-mono text-[13px]" style={{ color: 'var(--text-muted)' }}>
+                  {short(String(user.id))}
+                </dd>
+                <dt className="eyebrow self-center">ROLE</dt>
+                <dd className="text-[14px]" style={{ color: 'var(--text-muted)' }}>
+                  {user.role || 'member'}
+                </dd>
+              </dl>
+            </article>
+
+            <article className="surface-card">
+              <div className="flex items-center justify-between mb-6">
+                <span className="section-marker">
+                  <span className="section-marker-num">02</span> / WALLET
+                </span>
+                <span className="eyebrow">LO POINTS</span>
+              </div>
+              <dl className="grid grid-cols-[110px_1fr] gap-y-4 gap-x-6 text-[14px]">
+                <dt className="eyebrow self-center">BALANCE</dt>
+                <dd className="font-mono text-[20px] font-medium">
+                  {user.points_balance ?? 0}
+                  <span className="text-[12px] ml-2" style={{ color: 'var(--text-muted)' }}>
+                    LO
+                  </span>
+                </dd>
+                <dt className="eyebrow self-center">MARKETS</dt>
+                <dd className="font-mono text-[14px]" style={{ color: 'var(--text-muted)' }}>
+                  {marketCounts.total} total · {marketCounts.live} live
+                </dd>
+              </dl>
+            </article>
+          </div>
+        </section>
+
+        {/* Markets section */}
+        <section>
+          <div className="flex items-end justify-between mb-8 flex-wrap gap-6">
+            <div>
+              <span className="section-marker">
+                <span className="section-marker-num">03</span> / MARKETS
+              </span>
+              <h2 className="mt-3 text-[28px] font-medium tracking-tight">Browse the floor</h2>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              {tabs.map((tab) => {
+                const active = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id)}
+                    className="px-4 py-2 rounded-full border text-[13px] transition-colors"
+                    style={{
+                      borderColor: active ? 'var(--accent)' : 'var(--border)',
+                      background: active ? 'var(--accent-soft)' : 'transparent',
+                      color: active ? 'var(--accent-ink)' : 'var(--text)',
+                    }}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Search */}
+          <div
+            className="flex items-center gap-3 px-4 py-3 mb-10 rounded-xl border"
+            style={{ borderColor: 'var(--border)' }}
+          >
+            <Search className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+            <input
+              type="text"
+              placeholder="Search markets by question, description, or creator"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 bg-transparent text-[14px] focus:outline-none"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="text-[12px]"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          {loading ? (
+            <div className="flex justify-center py-24">
+              <Loader2 className="w-6 h-6 animate-spin" style={{ color: 'var(--accent)' }} />
+            </div>
+          ) : filteredMarkets.length === 0 ? (
+            <div className="surface-card text-center">
+              <p className="eyebrow mb-3">EMPTY STATE</p>
+              <h3 className="text-[22px] font-medium mb-2">
+                {searchQuery ? 'No markets match that query.' : 'No markets yet.'}
+              </h3>
+              <p className="text-[14px] mb-6" style={{ color: 'var(--text-muted)' }}>
+                {searchQuery
+                  ? 'Try a broader query, or clear the filter.'
+                  : 'Be the first to propose a prediction market.'}
               </p>
               {!searchQuery && (
-                <button
-                  onClick={() => router.push('/create')}
-                  className="gradient-primary text-white font-semibold py-2 px-6 rounded-xl shadow-lg shadow-emerald hover:shadow-xl hover:shadow-emerald hover:-translate-y-0.5 transition-all"
-                >
-                  Create Market
+                <button type="button" onClick={() => router.push('/create')} className="btn-mint">
+                  Create market
                 </button>
               )}
             </div>
-          </div>
-        ) : (
-          <>
-            {searchQuery && (
-              <div className="mb-4 px-4">
-                <p className="text-zinc-400 text-sm">
-                  Found {filteredMarkets.length} market{filteredMarkets.length !== 1 ? 's' : ''} matching "{searchQuery}"
+          ) : (
+            <>
+              {searchQuery && (
+                <p className="text-[13px] mb-4" style={{ color: 'var(--text-muted)' }}>
+                  Found {filteredMarkets.length} market
+                  {filteredMarkets.length !== 1 ? 's' : ''} matching "{searchQuery}"
                 </p>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredMarkets.map((market, i) => (
+                  <MarketCard
+                    key={market.id}
+                    market={market}
+                    settings={platformSettings}
+                    index={i + 1}
+                  />
+                ))}
               </div>
-            )}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredMarkets.map((market) => (
-                <MarketCard key={market.id} market={market} settings={platformSettings} />
-              ))}
-            </div>
-          </>
-        )}
+            </>
+          )}
+        </section>
       </main>
+
+      <footer className="container mx-auto px-8 lg:px-12 py-12">
+        <div className="divider-line mb-8" />
+        <div className="flex flex-wrap items-center justify-between text-[12px]" style={{ color: 'var(--text-muted)' }}>
+          <span>Speculon Prediction Market</span>
+          <span className="section-marker">
+            <span className="section-marker-num">§</span> v0.1 · community release
+          </span>
+        </div>
+      </footer>
     </div>
   );
 }
-

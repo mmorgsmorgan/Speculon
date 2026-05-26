@@ -211,7 +211,7 @@ export default function PlatformSettings() {
                 onChange={(e) => updateSetting('starting_balance', parseInt(e.target.value))}
                 className="w-full px-4 py-3 bg-black/40 border border-zinc-700 rounded-xl text-white focus:outline-none focus:border-emerald-500 transition-colors"
               />
-              <p className="text-zinc-500 text-xs mt-2">Current: {settings?.starting_balance} pts</p>
+              <p className="text-zinc-500 text-xs mt-2">Current: {settings?.starting_balance} LO</p>
             </div>
           </div>
 

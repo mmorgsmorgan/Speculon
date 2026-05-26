@@ -140,7 +140,7 @@ export default function ResolveMarket() {
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <p className="text-zinc-500 text-sm mb-1">Total Pool</p>
-                <p className="text-white font-bold text-xl">{totalPool.toFixed(0)} pts</p>
+                <p className="text-white font-bold text-xl">{totalPool.toFixed(0)} LO</p>
               </div>
               <div>
                 <p className="text-zinc-500 text-sm mb-1">Total Predictions</p>
@@ -201,7 +201,7 @@ export default function ResolveMarket() {
                       </div>
                       <div className="text-right">
                         <p className="text-white font-bold text-2xl mb-1">{percentage.toFixed(1)}%</p>
-                        <p className="text-zinc-400 text-sm">{staked.toFixed(0)} pts staked</p>
+                        <p className="text-zinc-400 text-sm">{staked.toFixed(0)} LO staked</p>
                       </div>
                     </div>
 
@@ -230,18 +230,18 @@ export default function ResolveMarket() {
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-zinc-400">Winning Pool</span>
-                  <span className="text-white font-medium">{parseFloat(selectedOutcome.total_staked).toFixed(0)} pts</span>
+                  <span className="text-white font-medium">{parseFloat(selectedOutcome.total_staked).toFixed(0)} LO</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-zinc-400">Losing Pool</span>
                   <span className="text-white font-medium">
-                    {(totalPool - parseFloat(selectedOutcome.total_staked)).toFixed(0)} pts
+                    {(totalPool - parseFloat(selectedOutcome.total_staked)).toFixed(0)} LO
                   </span>
                 </div>
                 <div className="h-px bg-zinc-700 my-2"></div>
                 <div className="flex justify-between text-base">
                   <span className="text-zinc-300">Total to Distribute</span>
-                  <span className="text-emerald-400 font-bold">{totalPool.toFixed(0)} pts</span>
+                  <span className="text-emerald-400 font-bold">{totalPool.toFixed(0)} LO</span>
                 </div>
                 <p className="text-zinc-500 text-xs mt-4">
                   Winners will receive their original stake plus a proportional share of the losing pool

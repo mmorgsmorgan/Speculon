@@ -6,7 +6,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import ApprovalVoteModal from '@/components/ApprovalVoteModal';
 import PredictionModal from '@/components/PredictionModal';
-import { Loader2, Clock, Users, TrendingUp, Calendar, User, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { Loader2, ArrowLeft, AlertTriangle } from 'lucide-react';
 
 export default function MarketDetailPage() {
   const { user, updateBalance } = useAuth();
@@ -22,9 +22,7 @@ export default function MarketDetailPage() {
   const [submittingDispute, setSubmittingDispute] = useState(false);
 
   useEffect(() => {
-    if (params.id) {
-      fetchMarket();
-    }
+    if (params.id) fetchMarket();
   }, [params.id]);
 
   const fetchMarket = async () => {
@@ -32,12 +30,10 @@ export default function MarketDetailPage() {
     try {
       const response = await fetch(`/api/markets/${params.id}`);
       const data = await response.json();
-      
       if (response.ok) {
         setMarket(data.market);
         if (data.settings) setPlatformSettings(data.settings);
       } else {
-        console.error('Market not found');
         router.push('/');
       }
     } catch (error) {
@@ -48,23 +44,15 @@ export default function MarketDetailPage() {
   };
 
   const handleVoteSuccess = (data) => {
-    // Refresh market data
     fetchMarket();
-    
-    // Show success message (could add toast notification here)
     if (data.statusUpdate === 'approved') {
       alert('Market approved! It can now be activated by an admin.');
     }
   };
 
   const handlePredictionSuccess = (data) => {
-    // Refresh market data
     fetchMarket();
-    
-    // Update user balance in context (immutable)
-    if (updateBalance) {
-      updateBalance(data.newBalance);
-    }
+    if (updateBalance) updateBalance(data.newBalance);
   };
 
   const handleSubmitDispute = async () => {
@@ -72,17 +60,13 @@ export default function MarketDetailPage() {
       alert('Please provide a detailed reason (at least 10 characters)');
       return;
     }
-
     setSubmittingDispute(true);
     try {
       const res = await fetch(`/api/markets/${params.id}/dispute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          reason: disputeReason
-        })
+        body: JSON.stringify({ reason: disputeReason }),
       });
-
       if (res.ok) {
         alert('Dispute submitted successfully!');
         setShowDisputeModal(false);
@@ -103,175 +87,145 @@ export default function MarketDetailPage() {
   const isWithinDisputeWindow = () => {
     if (market?.status !== 'resolved' || !market.resolution_time) return false;
     const resolvedAt = new Date(market.resolution_time);
-    const now = new Date();
-    const hoursElapsed = (now - resolvedAt) / (1000 * 60 * 60);
+    const hoursElapsed = (new Date() - resolvedAt) / 3600000;
     const disputeHours = parseFloat(platformSettings.dispute_window_hours) || 24;
     return hoursElapsed < disputeHours;
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-black via-charcoal to-deep-emerald flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-primary-emerald animate-spin" />
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin" style={{ color: 'var(--accent)' }} />
       </div>
     );
   }
 
-  if (!market) {
-    return null;
-  }
+  if (!market) return null;
 
-  const getStatusBadge = () => {
-    const badges = {
-      live: { bg: 'gradient-primary', text: 'Live' },
-      proposed: { bg: 'bg-sunset-orange', text: 'Proposed' },
-      approved: { bg: 'bg-primary-blue', text: 'Approved' },
-      closed: { bg: 'bg-slate-gray', text: 'Closed' },
-      resolved: { bg: 'gradient-success', text: 'Resolved' },
-      disputed: { bg: 'gradient-alert', text: 'Disputed' },
-      final: { bg: 'gradient-primary', text: 'Final' }
-    };
-
-    const badge = badges[market.status] || badges.proposed;
-
-    return (
-      <span className={`${badge.bg} px-4 py-1.5 rounded-full text-white text-sm font-semibold uppercase shadow-lg`}>
-        {badge.text}
-      </span>
-    );
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString('en-US', {
+  const formatDate = (s) =>
+    new Date(s).toLocaleString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
-  };
-
-  // Static Tailwind classes — dynamic construction breaks JIT
-  const outcomeGradients = [
-    'h-full bg-gradient-to-r from-primary-emerald to-bright-lime transition-all duration-500',
-    'h-full bg-gradient-to-r from-primary-blue to-sky-blue transition-all duration-500',
-    'h-full bg-gradient-to-r from-sunset-orange to-hot-coral transition-all duration-500',
-    'h-full bg-gradient-to-r from-deep-purple to-electric-pink transition-all duration-500'
-  ];
-
-  const getOutcomeGradient = (index) => outcomeGradients[index % outcomeGradients.length];
 
   const calculatePercentage = (staked) => {
-    if (market.total_pool === 0) return 0;
-    return ((parseFloat(staked) / market.total_pool) * 100).toFixed(1);
+    if (!market.total_pool || market.total_pool === 0) return 0;
+    return ((parseFloat(staked || 0) / market.total_pool) * 100).toFixed(1);
   };
 
+  const statusLabel = (market.status || 'proposed').toUpperCase();
+  const approvalThreshold = parseFloat(platformSettings?.required_approval_votes) || 10;
+  const approvalCount = market.approval_votes?.approve || 0;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-charcoal to-deep-emerald">
+    <div className="min-h-screen">
       <Navigation />
-      
-      <main className="container mx-auto px-6 py-8 max-w-6xl">
-        {/* Back Button */}
+
+      <main className="container mx-auto px-8 lg:px-12 py-12 max-w-6xl">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-slate-gray hover:text-white transition-colors mb-6"
+          className="inline-flex items-center gap-2 mb-10 text-[13px]"
+          style={{ color: 'var(--text-muted)' }}
         >
-          <ArrowLeft className="w-5 h-5" />
-          <span>Back to Markets</span>
+          <ArrowLeft className="w-4 h-4" />
+          Back to markets
         </button>
 
-        {/* Hero Section */}
-        <div className="glass-dark p-8 rounded-2xl border border-primary-emerald/20 mb-6">
-          <div className="flex items-start justify-between mb-6">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-4">
-                {getStatusBadge()}
-                <span className="text-slate-gray text-sm">
-                  Created {formatDate(market.created_at)}
-                </span>
-              </div>
-              <h1 className="text-4xl font-bold text-white mb-4">
-                {market.question}
-              </h1>
-              {market.description && (
-                <p className="text-slate-gray text-lg mb-4">
-                  {market.description}
-                </p>
-              )}
-              <div className="flex items-center gap-2 text-slate-gray">
-                <User className="w-4 h-4" />
-                <span className="text-sm">
-                  Created by <span className="text-white font-medium">{market.creator?.username}</span>
-                </span>
-              </div>
-            </div>
+        <section className="mb-10">
+          <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+            <span className="section-marker">
+              <span className="section-marker-num">§</span> 01 / {statusLabel}
+            </span>
+            <span className="eyebrow">CREATED {formatDate(market.created_at).toUpperCase()}</span>
           </div>
 
-          {/* Stats Bar */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white/5 rounded-xl p-4 border border-primary-emerald/10">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="w-5 h-5 text-bright-lime" />
-                <span className="text-slate-gray text-sm">Total Pool</span>
-              </div>
-              <p className="text-2xl font-bold text-bright-lime font-mono">
-                {market.total_pool || 0} pts
-              </p>
-            </div>
-            <div className="bg-white/5 rounded-xl p-4 border border-primary-blue/10">
-              <div className="flex items-center gap-2 mb-2">
-                <Users className="w-5 h-5 text-primary-blue" />
-                <span className="text-slate-gray text-sm">Predictions</span>
-              </div>
-              <p className="text-2xl font-bold text-primary-blue font-mono">
-                {market.predictions_count || 0}
-              </p>
-            </div>
-            <div className="bg-white/5 rounded-xl p-4 border border-sunset-orange/10">
-              <div className="flex items-center gap-2 mb-2">
-                <Calendar className="w-5 h-5 text-sunset-orange" />
-                <span className="text-slate-gray text-sm">Closes</span>
-              </div>
-              <p className="text-lg font-bold text-sunset-orange">
-                {formatDate(market.close_time)}
-              </p>
-            </div>
+          <h1 className="editorial-heading" style={{ fontSize: 'clamp(32px, 5vw, 56px)' }}>
+            {market.question}
+          </h1>
+
+          {market.description && (
+            <p
+              className="mt-6 max-w-3xl text-[17px] leading-relaxed"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              {market.description}
+            </p>
+          )}
+
+          <p className="mt-6 eyebrow">
+            BY {(market.creator?.username || 'UNKNOWN').toUpperCase()}
+          </p>
+        </section>
+
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
+          <div className="surface-card-sm">
+            <p className="eyebrow mb-3">TOTAL POOL</p>
+            <p className="text-[28px] font-mono font-medium">
+              {market.total_pool || 0}
+              <span className="ml-2 text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                LO
+              </span>
+            </p>
           </div>
-        </div>
+          <div className="surface-card-sm">
+            <p className="eyebrow mb-3">PREDICTIONS</p>
+            <p className="text-[28px] font-mono font-medium">{market.predictions_count || 0}</p>
+          </div>
+          <div className="surface-card-sm">
+            <p className="eyebrow mb-3">CLOSES</p>
+            <p className="text-[15px] font-medium leading-tight">{formatDate(market.close_time)}</p>
+          </div>
+        </section>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Outcomes Section */}
           <div className="lg:col-span-2">
-            <div className="glass-dark p-6 rounded-2xl border border-primary-emerald/20">
-              <h2 className="text-2xl font-bold text-white mb-6">Outcomes</h2>
+            <div className="surface-card">
+              <div className="flex items-center justify-between mb-6">
+                <span className="section-marker">
+                  <span className="section-marker-num">02</span> / OUTCOMES
+                </span>
+                <span className="eyebrow">DISTRIBUTION</span>
+              </div>
+
               <div className="space-y-4">
                 {market.outcomes?.map((outcome, index) => {
-                  const percentage = calculatePercentage(outcome.total_staked);
-                  
+                  const pct = calculatePercentage(outcome.total_staked);
                   return (
                     <div
                       key={outcome.id}
-                      className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-primary-emerald/30 transition-all"
+                      className="rounded-xl p-4"
+                      style={{ border: '1px solid var(--border)' }}
                     >
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex-1">
-                          <h3 className="text-white font-semibold text-lg mb-1">
-                            {outcome.outcome_text}
-                          </h3>
-                          <p className="text-slate-gray text-sm">
-                            {outcome.total_staked} pts staked
+                          <span className="eyebrow mr-2">
+                            {String(index + 1).padStart(2, '0')}
+                          </span>
+                          <span className="text-[16px] font-medium">{outcome.outcome_text}</span>
+                          <p className="mt-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                            {outcome.total_staked} LO staked
                           </p>
                         </div>
-                        <div className="text-right">
-                          <p className="text-bright-lime text-2xl font-bold font-mono">
-                            {percentage}%
-                          </p>
-                        </div>
+                        <p
+                          className="text-[24px] font-mono font-medium"
+                          style={{ color: 'var(--accent)' }}
+                        >
+                          {pct}%
+                        </p>
                       </div>
-                      <div className="h-3 bg-white/5 rounded-full overflow-hidden">
+                      <div
+                        className="h-[3px] rounded-full overflow-hidden"
+                        style={{ background: 'var(--bg-sunken)' }}
+                      >
                         <div
-                          className={getOutcomeGradient(index)}
-                          style={{ width: `${percentage}%` }}
+                          style={{
+                            width: `${pct}%`,
+                            background: 'var(--accent)',
+                            height: '100%',
+                          }}
                         />
                       </div>
                     </div>
@@ -281,73 +235,89 @@ export default function MarketDetailPage() {
             </div>
           </div>
 
-          {/* Sidebar - Action Panel */}
           <div className="lg:col-span-1">
-            <div className="glass-dark p-6 rounded-2xl border border-primary-emerald/20 sticky top-24">
-              <h3 className="text-xl font-bold text-white mb-4">Take Action</h3>
-              
+            <div className="surface-card sticky top-6">
+              <span className="section-marker mb-5 block">
+                <span className="section-marker-num">03</span> / ACTION
+              </span>
+
               {market.status === 'proposed' && (
-                <div className="mb-4">
-                  <p className="text-slate-gray text-sm mb-3">
-                    This market needs community approval before going live.
+                <div>
+                  <p className="text-[14px] mb-5" style={{ color: 'var(--text-muted)' }}>
+                    This market needs community approval before opening.
                   </p>
-                  <div className="bg-primary-blue/10 border border-primary-blue/30 rounded-xl p-3 mb-3">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-slate-gray">Approval Progress</span>
-                      <span className="text-white font-semibold">
-                        {market.approval_votes?.approve || 0} / 10
+                  <div className="mb-5">
+                    <div className="flex items-center justify-between eyebrow mb-2">
+                      <span>APPROVAL</span>
+                      <span style={{ color: 'var(--text)' }}>
+                        {approvalCount} / {approvalThreshold}
                       </span>
                     </div>
-                    <div className="mt-2 h-2 bg-white/5 rounded-full overflow-hidden">
+                    <div
+                      className="h-[3px] rounded-full overflow-hidden"
+                      style={{ background: 'var(--bg-sunken)' }}
+                    >
                       <div
-                        className="h-full gradient-primary"
-                        style={{ width: `${Math.min(((market.approval_votes?.approve || 0) / 10) * 100, 100)}%` }}
+                        style={{
+                          width: `${Math.min((approvalCount / approvalThreshold) * 100, 100)}%`,
+                          background: 'var(--accent)',
+                          height: '100%',
+                        }}
                       />
                     </div>
                   </div>
-                  <button 
+                  <button
+                    type="button"
                     onClick={() => setShowVoteModal(true)}
-                    className="w-full gradient-primary text-white font-semibold py-3 px-6 rounded-xl shadow-lg shadow-emerald hover:shadow-xl hover:shadow-emerald hover:-translate-y-0.5 transition-all"
+                    className="btn-mint w-full"
                   >
-                    Vote to Approve
+                    Vote to approve
                   </button>
                 </div>
               )}
 
               {market.status === 'live' && (
                 <div>
-                  <p className="text-slate-gray text-sm mb-4">
+                  <p className="text-[14px] mb-5" style={{ color: 'var(--text-muted)' }}>
                     Place your prediction on the outcome you believe will happen.
                   </p>
-                  <button 
+                  <button
+                    type="button"
                     onClick={() => setShowPredictionModal(true)}
-                    className="w-full gradient-primary text-white font-semibold py-3 px-6 rounded-xl shadow-lg shadow-emerald hover:shadow-xl hover:shadow-emerald hover:-translate-y-0.5 transition-all"
+                    className="btn-mint w-full"
                   >
-                    Place Prediction
+                    Place prediction
                   </button>
                 </div>
               )}
 
               {(market.status === 'closed' || market.status === 'resolved') && (
-                <div className="text-center">
-                  <Clock className="w-12 h-12 text-slate-gray mx-auto mb-3" />
-                  <p className="text-slate-gray">
+                <div>
+                  <p className="eyebrow mb-3">STATUS</p>
+                  <p className="text-[14px] mb-5" style={{ color: 'var(--text-muted)' }}>
                     This market is {market.status}. No new predictions allowed.
                   </p>
-                  
+
                   {market.status === 'resolved' && isWithinDisputeWindow() && (
-                    <div className="mt-4">
+                    <>
                       <button
+                        type="button"
                         onClick={() => setShowDisputeModal(true)}
-                        className="w-full bg-orange-500/20 text-orange-400 border border-orange-500/30 font-semibold py-3 px-6 rounded-xl hover:bg-orange-500/30 transition-all flex items-center justify-center gap-2"
+                        className="btn-outline w-full inline-flex items-center justify-center gap-2"
+                        style={{ color: 'var(--danger)' }}
                       >
-                        <AlertTriangle className="w-5 h-5" />
-                        Dispute Resolution
+                        <AlertTriangle className="w-4 h-4" />
+                        Dispute resolution
                       </button>
-                      <p className="text-xs text-slate-gray mt-2">
-                        Dispute window closes in {Math.floor((parseFloat(platformSettings.dispute_window_hours) || 24) - ((new Date() - new Date(market.resolution_time)) / (1000 * 60 * 60)))} hours
+                      <p className="mt-3 eyebrow">
+                        WINDOW CLOSES IN{' '}
+                        {Math.floor(
+                          (parseFloat(platformSettings.dispute_window_hours) || 24) -
+                            (new Date() - new Date(market.resolution_time)) / 3600000
+                        )}
+                        H
                       </p>
-                    </div>
+                    </>
                   )}
                 </div>
               )}
@@ -356,7 +326,6 @@ export default function MarketDetailPage() {
         </div>
       </main>
 
-      {/* Vote Modal */}
       {showVoteModal && (
         <ApprovalVoteModal
           market={market}
@@ -366,7 +335,6 @@ export default function MarketDetailPage() {
         />
       )}
 
-      {/* Prediction Modal */}
       {showPredictionModal && user && (
         <PredictionModal
           market={market}
@@ -376,62 +344,71 @@ export default function MarketDetailPage() {
         />
       )}
 
-      {/* Dispute Modal */}
       {showDisputeModal && user && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gradient-to-br from-charcoal/95 to-deep-emerald/95 backdrop-blur-xl rounded-3xl border border-orange-500/30 max-w-lg w-full shadow-2xl shadow-orange-500/20 p-8">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(17, 17, 17, 0.55)', backdropFilter: 'blur(4px)' }}
+        >
+          <div
+            className="w-full max-w-lg rounded-3xl p-8"
+            style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
+          >
             <div className="flex items-start gap-4 mb-6">
-              <div className="p-3 bg-orange-500/20 rounded-2xl">
-                <AlertTriangle className="w-8 h-8 text-orange-400" />
+              <div
+                className="w-12 h-12 rounded-xl flex items-center justify-center"
+                style={{ border: '1px solid var(--border)' }}
+              >
+                <AlertTriangle className="w-5 h-5" style={{ color: 'var(--danger)' }} />
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-white mb-2">Dispute Resolution</h3>
-                <p className="text-slate-gray text-sm">
-                  Explain why you believe this resolution is incorrect
+                <p className="section-marker mb-1">
+                  <span className="section-marker-num">§</span> DISPUTE
+                </p>
+                <h3 className="text-[22px] font-medium">Dispute resolution</h3>
+                <p className="mt-1 text-[13px]" style={{ color: 'var(--text-muted)' }}>
+                  Explain why you believe this resolution is incorrect.
                 </p>
               </div>
             </div>
 
             <div className="mb-6">
-              <label className="block text-white font-medium mb-2">
-                Reason for Dispute <span className="text-red-400">*</span>
-              </label>
+              <label className="eyebrow block mb-2">REASON *</label>
               <textarea
                 value={disputeReason}
                 onChange={(e) => setDisputeReason(e.target.value)}
-                placeholder="Provide detailed evidence and reasoning for why this resolution should be reviewed..."
-                className="w-full px-4 py-3 bg-black/40 border border-zinc-700 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-orange-500 transition-colors resize-none"
+                placeholder="Provide detailed evidence and reasoning…"
+                className="input-paper resize-none"
                 rows={5}
               />
-              <p className="text-xs text-slate-gray mt-2">
-                Minimum 10 characters required
-              </p>
+              <p className="mt-2 eyebrow">MIN 10 CHARACTERS</p>
             </div>
 
-            <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 mb-6">
-              <p className="text-orange-300 text-sm">
-                <strong>Note:</strong> Submitting a dispute will flag this market for admin review. 
-                The admin will decide whether to uphold, overturn, or invalidate the resolution.
+            <div className="surface-card-sm mb-6" style={{ background: 'var(--bg-sunken)' }}>
+              <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>
+                Submitting a dispute flags this market for admin review. The admin will decide
+                whether to uphold, overturn, or invalidate the resolution.
               </p>
             </div>
 
             <div className="flex gap-3">
               <button
+                type="button"
                 onClick={() => {
                   setShowDisputeModal(false);
                   setDisputeReason('');
                 }}
-                className="flex-1 px-6 py-3 bg-white/5 text-white rounded-xl font-semibold hover:bg-white/10 transition-all"
+                className="btn-outline flex-1"
                 disabled={submittingDispute}
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleSubmitDispute}
                 disabled={submittingDispute || disputeReason.length < 10}
-                className="flex-1 px-6 py-3 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-xl font-semibold hover:bg-orange-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-mint flex-1"
               >
-                {submittingDispute ? 'Submitting...' : 'Submit Dispute'}
+                {submittingDispute ? 'Submitting…' : 'Submit dispute'}
               </button>
             </div>
           </div>

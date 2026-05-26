@@ -82,7 +82,7 @@ export default function UserManagementModal({ user, onClose, onUpdate }) {
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="glass-dark p-4 rounded-xl">
               <p className="text-zinc-500 text-xs mb-1">Current Balance</p>
-              <p className="text-white font-bold text-lg">{parseFloat(user.points_balance || 0).toFixed(0)} pts</p>
+              <p className="text-white font-bold text-lg">{parseFloat(user.points_balance || 0).toFixed(0)} LO</p>
             </div>
             <div className="glass-dark p-4 rounded-xl">
               <p className="text-zinc-500 text-xs mb-1">Current Role</p>
@@ -143,11 +143,11 @@ export default function UserManagementModal({ user, onClose, onUpdate }) {
                   step="1"
                   className="flex-1 px-4 py-3 bg-black/40 border border-zinc-700 rounded-xl text-white focus:outline-none focus:border-emerald-500 transition-colors"
                 />
-                <span className="text-zinc-400 font-medium">pts</span>
+                <span className="text-zinc-400 font-medium">LO</span>
               </div>
               <p className="text-zinc-500 text-xs mt-2">
-                Current: {parseFloat(user.points_balance || 0).toFixed(0)} pts • 
-                Change: {(parseFloat(newBalance) - parseFloat(user.points_balance || 0)) > 0 ? '+' : ''}{(parseFloat(newBalance) - parseFloat(user.points_balance || 0)).toFixed(0)} pts
+                Current: {parseFloat(user.points_balance || 0).toFixed(0)} LO • 
+                Change: {(parseFloat(newBalance) - parseFloat(user.points_balance || 0)) > 0 ? '+' : ''}{(parseFloat(newBalance) - parseFloat(user.points_balance || 0)).toFixed(0)} LO
               </p>
             </div>
           )}

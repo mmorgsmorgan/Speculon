@@ -56,7 +56,7 @@ export async function POST(request, { params }) {
 
     return NextResponse.json({
       success: true,
-      message: `Added ${amount} pts bonus to market pool`,
+      message: `Added ${amount} LO Points bonus to market pool`,
       amount
     });
 
