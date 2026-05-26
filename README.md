@@ -1,4 +1,4 @@
-# Ritual Prediction Market
+# Speculon Prediction Market
 
 A decentralized prediction market platform for the Ritual Network community, built with Next.js and Supabase.
 
