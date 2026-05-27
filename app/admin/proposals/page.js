@@ -3,17 +3,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { 
-  CheckCircle, XCircle, Edit3, ChevronDown, ChevronUp, 
-  RefreshCw, Filter, ArrowLeft, Sparkles, Clock, AlertTriangle,
-  Play, Square, Zap, Power
+import {
+  CheckCircle, XCircle, Edit3, ChevronDown, ChevronUp,
+  RefreshCw, ArrowLeft, Sparkles, Clock, Zap
 } from 'lucide-react';
 
-const STATUS_COLORS = {
-  pending: 'text-yellow-400 bg-yellow-400/10 border-yellow-500/30',
-  approved: 'text-emerald-400 bg-emerald-400/10 border-emerald-500/30',
-  edited: 'text-blue-400 bg-blue-400/10 border-blue-500/30',
-  rejected: 'text-red-400 bg-red-400/10 border-red-500/30',
+// Tone maps every proposal status to a (bg, fg, border) triplet using design tokens.
+// Selected = filled accent/danger; unselected = neutral outline.
+const STATUS_TONE = {
+  pending:  { bg: 'var(--card)',         fg: 'var(--text)',        border: 'var(--border)' },
+  approved: { bg: 'var(--accent-soft)',  fg: 'var(--accent-ink)',  border: 'var(--accent)' },
+  edited:   { bg: 'var(--accent-soft)',  fg: 'var(--accent-ink)',  border: 'var(--accent)' },
+  rejected: { bg: 'var(--danger-soft)',  fg: 'var(--danger-ink)',  border: 'var(--danger)' },
 };
 
 const STATUS_ICONS = {
@@ -177,80 +178,105 @@ export default function AdminProposals() {
 
   if (!isAdmin) return null;
 
+  const FILTER_TABS = [
+    { value: '', label: 'All' },
+    { value: 'pending', label: 'Pending' },
+    { value: 'approved', label: 'Approved' },
+    { value: 'edited', label: 'Edited' },
+    { value: 'rejected', label: 'Rejected' },
+  ];
+
+  const STATS = [
+    { label: 'Total', count: counts.all, tone: 'default' },
+    { label: 'Pending', count: counts.pending, tone: 'muted' },
+    { label: 'Approved', count: counts.approved, tone: 'accent' },
+    { label: 'Rejected', count: counts.rejected, tone: 'danger' },
+  ];
+
+  const TONE = {
+    default: 'var(--text)',
+    muted:   'var(--text-muted)',
+    accent:  'var(--accent)',
+    danger:  'var(--danger)',
+  };
+
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
-      <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="min-h-screen py-12 px-4">
+      <div className="max-w-5xl mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
+        <div className="flex items-start gap-4 mb-8">
           <button
             onClick={() => router.push('/admin')}
-            className="p-2 glass-dark rounded-xl hover:bg-zinc-800 transition-all"
+            className="p-2 rounded-[10px] text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
+            style={{ border: '1px solid var(--border)' }}
           >
-            <ArrowLeft className="w-5 h-5 text-zinc-400" />
+            <ArrowLeft className="w-4 h-4" />
           </button>
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3">
-              <Sparkles className="w-8 h-8 text-emerald-400" />
-              AI Proposals
-            </h1>
-            <p className="text-zinc-400 mt-1">Review and manage AI-generated market proposals</p>
+          <div className="flex-1">
+            <div className="section-marker mb-2">
+              <span className="section-marker-num">§ AI</span> / PROPOSALS
+            </div>
+            <h1 className="text-[36px] font-medium tracking-tight">AI proposals</h1>
+            <p className="text-[15px] text-[var(--text-muted)] mt-1">Review and manage AI-generated market proposals.</p>
           </div>
           <button
             onClick={fetchProposals}
-            className="ml-auto p-3 glass-dark rounded-xl hover:bg-emerald-500/10 transition-all"
+            className="btn-outline inline-flex items-center gap-2"
             disabled={loading}
           >
-            <RefreshCw className={`w-5 h-5 text-emerald-400 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
           </button>
         </div>
 
         {/* Pipeline Control Panel */}
-        <div className="glass-dark rounded-2xl border border-zinc-800 p-5 mb-6">
+        <div className="surface-card-sm mb-6">
           <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-4">
-              {/* Pipeline toggle */}
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleTogglePipeline}
-                  disabled={pipelineLoading}
-                  className={`relative inline-flex h-7 w-13 items-center rounded-full transition-colors duration-200 focus:outline-none ${
-                    pipelineEnabled ? 'bg-emerald-500' : 'bg-zinc-700'
-                  } ${pipelineLoading ? 'opacity-50' : ''}`}
-                >
-                  <span
-                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform duration-200 ${
-                      pipelineEnabled ? 'translate-x-7' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-                <div>
-                  <p className={`text-sm font-semibold ${pipelineEnabled ? 'text-emerald-400' : 'text-zinc-400'}`}>
-                    {pipelineEnabled ? 'Pipeline Active' : 'Pipeline Paused'}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleTogglePipeline}
+                disabled={pipelineLoading}
+                className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none"
+                style={{
+                  background: pipelineEnabled ? 'var(--accent)' : 'var(--bg-sunken)',
+                  border: '1px solid var(--border)',
+                  opacity: pipelineLoading ? 0.5 : 1
+                }}
+              >
+                <span
+                  className="inline-block h-4 w-4 transform rounded-full transition-transform"
+                  style={{
+                    background: pipelineEnabled ? 'var(--accent-ink)' : 'var(--text-muted)',
+                    transform: pipelineEnabled ? 'translateX(22px)' : 'translateX(2px)'
+                  }}
+                />
+              </button>
+              <div>
+                <p className="text-[14px] font-medium" style={{ color: pipelineEnabled ? 'var(--accent)' : 'var(--text-muted)' }}>
+                  {pipelineEnabled ? 'Pipeline active' : 'Pipeline paused'}
+                </p>
+                {pipelineLastRun && (
+                  <p className="text-[12px] text-[var(--text-muted)] font-mono">
+                    Last run: {new Date(pipelineLastRun).toLocaleString()}
                   </p>
-                  {pipelineLastRun && (
-                    <p className="text-xs text-zinc-600">
-                      Last run: {new Date(pipelineLastRun).toLocaleString()}
-                    </p>
-                  )}
-                </div>
+                )}
               </div>
             </div>
 
-            {/* Trigger button */}
             <button
               onClick={handleTriggerPipeline}
               disabled={triggerLoading}
-              className="flex items-center gap-2 px-5 py-2.5 bg-purple-500/10 text-purple-400 border border-purple-500/30 rounded-xl font-medium hover:bg-purple-500/20 transition-all disabled:opacity-50"
+              className="btn-mint inline-flex items-center gap-2"
             >
               {triggerLoading ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  Running Pipeline...
+                  Running pipeline…
                 </>
               ) : (
                 <>
                   <Zap className="w-4 h-4" />
-                  Run Now
+                  Run now
                 </>
               )}
             </button>
@@ -258,70 +284,54 @@ export default function AdminProposals() {
 
           {/* Trigger result banner */}
           {triggerResult && (
-            <div className={`mt-4 p-3 rounded-xl border text-sm ${
-              triggerResult.errors?.length
-                ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400'
-                : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-            }`}>
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <p className="font-medium">{triggerResult.message}</p>
-                  {triggerResult.fetched > 0 && (
-                    <p className="text-xs mt-1 opacity-80">
-                      {triggerResult.fetched} posts fetched → {triggerResult.topics} topics → {triggerResult.proposals} proposals
-                    </p>
-                  )}
-                  {triggerResult.errors?.length > 0 && (
-                    <p className="text-xs mt-1 opacity-70">
-                      {triggerResult.errors.join('; ')}
-                    </p>
-                  )}
-                </div>
-                <button
-                  onClick={() => setTriggerResult(null)}
-                  className="text-current opacity-60 hover:opacity-100 transition-opacity flex-shrink-0"
-                >
-                  <XCircle className="w-4 h-4" />
-                </button>
+            <div
+              className="mt-4 p-3 rounded-[10px] text-[13px] flex items-start justify-between gap-2"
+              style={{
+                background: triggerResult.errors?.length ? 'var(--danger-soft)' : 'var(--accent-soft)',
+                color: triggerResult.errors?.length ? 'var(--danger-ink)' : 'var(--accent-ink)',
+                border: '1px solid ' + (triggerResult.errors?.length ? 'var(--danger)' : 'var(--accent)')
+              }}
+            >
+              <div>
+                <p className="font-medium">{triggerResult.message}</p>
+                {triggerResult.fetched > 0 && (
+                  <p className="text-[12px] mt-1 opacity-80 font-mono">
+                    {triggerResult.fetched} posts → {triggerResult.topics} topics → {triggerResult.proposals} proposals
+                  </p>
+                )}
+                {triggerResult.errors?.length > 0 && (
+                  <p className="text-[12px] mt-1 opacity-70">{triggerResult.errors.join('; ')}</p>
+                )}
               </div>
+              <button
+                onClick={() => setTriggerResult(null)}
+                className="opacity-60 hover:opacity-100 flex-shrink-0"
+              >
+                <XCircle className="w-4 h-4" />
+              </button>
             </div>
           )}
         </div>
 
         {/* Stats Bar */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          {[
-            { label: 'Total', count: counts.all, color: 'text-zinc-300' },
-            { label: 'Pending', count: counts.pending, color: 'text-yellow-400' },
-            { label: 'Approved', count: counts.approved, color: 'text-emerald-400' },
-            { label: 'Rejected', count: counts.rejected, color: 'text-red-400' },
-          ].map(stat => (
-            <div key={stat.label} className="glass-dark p-4 rounded-xl border border-zinc-800">
-              <span className={`text-2xl font-bold ${stat.color}`}>{stat.count}</span>
-              <p className="text-zinc-500 text-sm mt-1">{stat.label}</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          {STATS.map(stat => (
+            <div key={stat.label} className="surface-card-sm">
+              <span className="font-mono text-[22px] font-medium" style={{ color: TONE[stat.tone] }}>{stat.count}</span>
+              <p className="eyebrow mt-1">{stat.label}</p>
             </div>
           ))}
         </div>
 
         {/* Filter Tabs */}
         <div className="flex gap-2 mb-6 overflow-x-auto">
-          {[
-            { value: '', label: 'All' },
-            { value: 'pending', label: 'Pending' },
-            { value: 'approved', label: 'Approved' },
-            { value: 'edited', label: 'Edited' },
-            { value: 'rejected', label: 'Rejected' },
-          ].map(filter => (
+          {FILTER_TABS.map(filter => (
             <button
               key={filter.value}
               onClick={() => setStatusFilter(filter.value)}
-              className={`px-5 py-2.5 rounded-xl font-medium transition-all whitespace-nowrap ${
-                statusFilter === filter.value
-                  ? 'gradient-primary text-white shadow-lg shadow-emerald-500/20'
-                  : 'glass-dark text-zinc-400 hover:text-white'
-              }`}
+              className="tab-pill whitespace-nowrap"
+              data-active={statusFilter === filter.value ? 'true' : 'false'}
             >
-              <Filter className="w-4 h-4 inline-block mr-1.5" />
               {filter.label}
             </button>
           ))}
@@ -330,71 +340,72 @@ export default function AdminProposals() {
         {/* Proposals List */}
         {loading ? (
           <div className="text-center py-20">
-            <RefreshCw className="w-8 h-8 text-emerald-400 animate-spin mx-auto mb-4" />
-            <p className="text-zinc-400">Loading proposals...</p>
+            <RefreshCw className="w-6 h-6 text-[var(--accent)] animate-spin mx-auto mb-4" />
+            <p className="text-[14px] text-[var(--text-muted)]">Loading proposals…</p>
           </div>
         ) : proposals.length === 0 ? (
-          <div className="text-center py-20 glass-dark rounded-2xl border border-zinc-800">
-            <Sparkles className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-            <p className="text-zinc-400 text-lg">No proposals found</p>
-            <p className="text-zinc-600 text-sm mt-1">
-              {statusFilter ? 'Try a different filter' : 'AI pipeline has not generated proposals yet'}
+          <div className="surface-card-sm text-center py-12">
+            <Sparkles className="w-10 h-10 text-[var(--text-muted)] mx-auto mb-4" />
+            <p className="text-[15px] font-medium">No proposals found.</p>
+            <p className="text-[13px] text-[var(--text-muted)] mt-1">
+              {statusFilter ? 'Try a different filter.' : 'AI pipeline has not generated proposals yet.'}
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {proposals.map(proposal => {
               const StatusIcon = STATUS_ICONS[proposal.status] || Clock;
               const isExpanded = expandedId === proposal.id;
               const isEditing = editingId === proposal.id;
               const isRejecting = rejectingId === proposal.id;
+              const tone = STATUS_TONE[proposal.status] || STATUS_TONE.pending;
 
               return (
                 <div
                   key={proposal.id}
-                  className="glass-dark rounded-2xl border border-zinc-800 overflow-hidden"
+                  className="rounded-[16px] overflow-hidden"
+                  style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
                 >
                   {/* Proposal Header */}
                   <div
-                    className="p-5 cursor-pointer hover:bg-zinc-800/30 transition-all"
+                    className="p-5 cursor-pointer transition-colors hover:bg-[var(--bg-sunken)]"
                     onClick={() => setExpandedId(isExpanded ? null : proposal.id)}
                   >
                     <div className="flex items-start gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border ${STATUS_COLORS[proposal.status] || 'text-zinc-400 bg-zinc-800 border-zinc-700'}`}>
+                          <span
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[4px] text-[11px] font-medium uppercase tracking-wider"
+                            style={{ background: tone.bg, color: tone.fg, border: '1px solid ' + tone.border }}
+                          >
                             <StatusIcon className="w-3 h-3" />
                             {proposal.status}
                           </span>
                           {proposal.generated_by && (
-                            <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/30">
-                              {proposal.generated_by}
-                            </span>
+                            <span className="tab-pill text-[11px]">{proposal.generated_by}</span>
                           )}
                           {proposal.ai_confidence != null && (
-                            <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/30">
+                            <span className="tab-pill text-[11px] font-mono">
                               {(proposal.ai_confidence * 100).toFixed(0)}% confidence
                             </span>
                           )}
                           {(proposal.categories || []).map(cat => (
-                            <span key={cat} className="px-2.5 py-1 rounded-lg text-xs bg-zinc-800 text-zinc-400 border border-zinc-700">
-                              {cat}
-                            </span>
+                            <span key={cat} className="tab-pill text-[11px]">{cat}</span>
                           ))}
                         </div>
-                        <h3 className="text-lg font-semibold text-white truncate">{proposal.title}</h3>
-                        <p className="text-zinc-400 text-sm mt-1 line-clamp-2">{proposal.description}</p>
+                        <h3 className="text-[18px] font-medium tracking-tight truncate">{proposal.title}</h3>
+                        <p className="text-[13px] text-[var(--text-muted)] mt-1 line-clamp-2">{proposal.description}</p>
                       </div>
                       <div className="flex-shrink-0 flex items-center gap-2">
                         {proposal.engagement_score != null && (
-                          <span className="text-sm text-zinc-500">
+                          <span className="text-[12px] text-[var(--text-muted)] font-mono">
                             Score: {(proposal.engagement_score * 100).toFixed(0)}
                           </span>
                         )}
                         {isExpanded ? (
-                          <ChevronUp className="w-5 h-5 text-zinc-500" />
+                          <ChevronUp className="w-4 h-4 text-[var(--text-muted)]" />
                         ) : (
-                          <ChevronDown className="w-5 h-5 text-zinc-500" />
+                          <ChevronDown className="w-4 h-4 text-[var(--text-muted)]" />
                         )}
                       </div>
                     </div>
@@ -402,14 +413,14 @@ export default function AdminProposals() {
 
                   {/* Expanded Details */}
                   {isExpanded && (
-                    <div className="border-t border-zinc-800 p-5 space-y-4">
+                    <div className="p-5 space-y-4" style={{ borderTop: '1px solid var(--border)' }}>
                       {/* Topic Source Info */}
                       {proposal.topic && (
-                        <div className="glass-dark p-4 rounded-xl border border-zinc-700">
-                          <h4 className="text-sm font-semibold text-zinc-300 mb-2">Source Topic</h4>
-                          <p className="text-sm text-white font-medium">{proposal.topic.label}</p>
-                          <p className="text-sm text-zinc-400 mt-1">{proposal.topic.summary}</p>
-                          <div className="flex gap-3 mt-2 text-xs text-zinc-500">
+                        <div className="note-block">
+                          <h4 className="eyebrow-strong mb-2">Source topic</h4>
+                          <p className="text-[14px] font-medium">{proposal.topic.label}</p>
+                          <p className="text-[13px] text-[var(--text-muted)] mt-1">{proposal.topic.summary}</p>
+                          <div className="flex gap-4 mt-2 text-[12px] text-[var(--text-muted)] font-mono">
                             <span>Status: {proposal.topic.status}</span>
                             {proposal.topic.engagement_score != null && (
                               <span>Engagement: {(proposal.topic.engagement_score * 100).toFixed(0)}</span>
@@ -425,128 +436,113 @@ export default function AdminProposals() {
                       {isEditing ? (
                         <div className="space-y-3">
                           <div>
-                            <label className="text-sm text-zinc-400 block mb-1">Title</label>
+                            <label className="text-[13px] text-[var(--text-muted)] block mb-1">Title</label>
                             <input
                               type="text"
                               value={editForm.title}
                               onChange={e => setEditForm({ ...editForm, title: e.target.value })}
-                              className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-2.5 text-white focus:border-emerald-500 focus:outline-none"
+                              className="input-paper"
                             />
                           </div>
                           <div>
-                            <label className="text-sm text-zinc-400 block mb-1">Description</label>
+                            <label className="text-[13px] text-[var(--text-muted)] block mb-1">Description</label>
                             <textarea
                               value={editForm.description}
                               onChange={e => setEditForm({ ...editForm, description: e.target.value })}
                               rows={3}
-                              className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-2.5 text-white focus:border-emerald-500 focus:outline-none resize-none"
+                              className="input-paper resize-none"
                             />
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label className="text-sm text-zinc-400 block mb-1">Resolution Date</label>
+                              <label className="text-[13px] text-[var(--text-muted)] block mb-1">Resolution date</label>
                               <input
                                 type="date"
                                 value={editForm.resolutionDate}
                                 onChange={e => setEditForm({ ...editForm, resolutionDate: e.target.value })}
-                                className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-2.5 text-white focus:border-emerald-500 focus:outline-none"
+                                className="input-paper font-mono"
                               />
                             </div>
                             <div>
-                              <label className="text-sm text-zinc-400 block mb-1">Outcomes</label>
+                              <label className="text-[13px] text-[var(--text-muted)] block mb-1">Outcomes</label>
                               <input
                                 type="text"
                                 value={(editForm.outcomes || []).join(', ')}
                                 onChange={e => setEditForm({ ...editForm, outcomes: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
-                                className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-2.5 text-white focus:border-emerald-500 focus:outline-none"
+                                className="input-paper"
                                 placeholder="Yes, No"
                               />
                             </div>
                           </div>
                           <div>
-                            <label className="text-sm text-zinc-400 block mb-1">Resolution Criteria</label>
+                            <label className="text-[13px] text-[var(--text-muted)] block mb-1">Resolution criteria</label>
                             <textarea
                               value={editForm.resolutionCriteria}
                               onChange={e => setEditForm({ ...editForm, resolutionCriteria: e.target.value })}
                               rows={2}
-                              className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-2.5 text-white focus:border-emerald-500 focus:outline-none resize-none"
+                              className="input-paper resize-none"
                             />
                           </div>
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleAction(proposal.id, 'edit_approve', { edits: editForm })}
                               disabled={actionLoading === proposal.id}
-                              className="px-5 py-2.5 gradient-primary text-white rounded-xl font-medium hover:opacity-90 transition-all disabled:opacity-50"
+                              className="btn-mint"
                             >
-                              Save & Approve
+                              Save & approve
                             </button>
                             <button
                               onClick={() => setEditingId(null)}
-                              className="px-5 py-2.5 glass-dark text-zinc-400 rounded-xl hover:text-white transition-all"
+                              className="btn-outline"
                             >
                               Cancel
                             </button>
                           </div>
                         </div>
                       ) : (
-                        <div className="space-y-2 text-sm">
-                          <div className="flex gap-2">
-                            <span className="text-zinc-500 w-32 flex-shrink-0">Outcomes:</span>
-                            <span className="text-white">{(proposal.outcomes || []).join(', ')}</span>
-                          </div>
-                          <div className="flex gap-2">
-                            <span className="text-zinc-500 w-32 flex-shrink-0">Resolution:</span>
-                            <span className="text-white">{proposal.resolution_criteria}</span>
-                          </div>
-                          <div className="flex gap-2">
-                            <span className="text-zinc-500 w-32 flex-shrink-0">Resolution Date:</span>
-                            <span className="text-white">
-                              {proposal.resolution_date && new Date(proposal.resolution_date).toLocaleDateString()}
-                            </span>
-                          </div>
-                          {proposal.reviewer && (
-                            <div className="flex gap-2">
-                              <span className="text-zinc-500 w-32 flex-shrink-0">Reviewed By:</span>
-                              <span className="text-white">{proposal.reviewer.username}</span>
+                        <div className="space-y-2 text-[13px]">
+                          {[
+                            ['Outcomes', (proposal.outcomes || []).join(', ')],
+                            ['Resolution', proposal.resolution_criteria],
+                            ['Resolution date', proposal.resolution_date && new Date(proposal.resolution_date).toLocaleDateString()],
+                            ['Reviewed by', proposal.reviewer?.username],
+                            ['Rejection', proposal.rejection_reason],
+                            ['Created', new Date(proposal.created_at).toLocaleString()],
+                          ].filter(([, v]) => v != null && v !== '').map(([k, v]) => (
+                            <div key={k} className="flex gap-2">
+                              <span className="text-[var(--text-muted)] w-32 flex-shrink-0">{k}</span>
+                              <span className={k === 'Rejection' ? 'text-[var(--danger)]' : ''}>{v}</span>
                             </div>
-                          )}
-                          {proposal.rejection_reason && (
-                            <div className="flex gap-2">
-                              <span className="text-zinc-500 w-32 flex-shrink-0">Rejection:</span>
-                              <span className="text-red-400">{proposal.rejection_reason}</span>
-                            </div>
-                          )}
-                          <div className="flex gap-2">
-                            <span className="text-zinc-500 w-32 flex-shrink-0">Created:</span>
-                            <span className="text-white">
-                              {new Date(proposal.created_at).toLocaleString()}
-                            </span>
-                          </div>
+                          ))}
                         </div>
                       )}
 
                       {/* Rejection input */}
                       {isRejecting && (
-                        <div className="glass-dark p-4 rounded-xl border border-red-500/30 space-y-3">
-                          <label className="text-sm text-red-400 block font-medium">Rejection Reason</label>
+                        <div
+                          className="p-4 rounded-[10px] space-y-3"
+                          style={{ background: 'var(--danger-soft)', border: '1px solid var(--danger)' }}
+                        >
+                          <label className="text-[13px] block font-medium text-[var(--danger-ink)]">Rejection reason</label>
                           <textarea
                             value={rejectionReason}
                             onChange={e => setRejectionReason(e.target.value)}
                             rows={2}
                             placeholder="Why is this proposal being rejected?"
-                            className="w-full bg-zinc-900 border border-red-500/30 rounded-xl px-4 py-2.5 text-white focus:border-red-500 focus:outline-none resize-none"
+                            className="input-paper resize-none"
                           />
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleAction(proposal.id, 'reject', { rejectionReason })}
                               disabled={actionLoading === proposal.id || rejectionReason.trim().length < 3}
-                              className="px-5 py-2.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl font-medium hover:bg-red-500/30 transition-all disabled:opacity-50"
+                              className="px-5 py-3 rounded-[10px] text-[14px] font-medium transition-colors disabled:opacity-50"
+                              style={{ background: 'var(--danger)', color: 'var(--bg)', border: '1px solid var(--danger)' }}
                             >
-                              Confirm Reject
+                              Confirm reject
                             </button>
                             <button
                               onClick={() => { setRejectingId(null); setRejectionReason(''); }}
-                              className="px-5 py-2.5 glass-dark text-zinc-400 rounded-xl hover:text-white transition-all"
+                              className="btn-outline"
                             >
                               Cancel
                             </button>
@@ -556,25 +552,26 @@ export default function AdminProposals() {
 
                       {/* Action Buttons */}
                       {proposal.status === 'pending' && !isEditing && !isRejecting && (
-                        <div className="flex gap-2 pt-2 border-t border-zinc-800">
+                        <div className="flex gap-2 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
                           <button
                             onClick={() => handleAction(proposal.id, 'approve')}
                             disabled={actionLoading === proposal.id}
-                            className="px-5 py-2.5 gradient-primary text-white rounded-xl font-medium hover:opacity-90 transition-all disabled:opacity-50 flex items-center gap-2"
+                            className="btn-mint inline-flex items-center gap-2"
                           >
                             <CheckCircle className="w-4 h-4" />
                             Approve
                           </button>
                           <button
                             onClick={() => startEdit(proposal)}
-                            className="px-5 py-2.5 bg-blue-500/10 text-blue-400 border border-blue-500/30 rounded-xl font-medium hover:bg-blue-500/20 transition-all flex items-center gap-2"
+                            className="btn-outline inline-flex items-center gap-2"
                           >
                             <Edit3 className="w-4 h-4" />
-                            Edit & Approve
+                            Edit & approve
                           </button>
                           <button
                             onClick={() => setRejectingId(proposal.id)}
-                            className="px-5 py-2.5 bg-red-500/10 text-red-400 border border-red-500/30 rounded-xl font-medium hover:bg-red-500/20 transition-all flex items-center gap-2"
+                            className="btn-outline inline-flex items-center gap-2"
+                            style={{ color: 'var(--danger)', borderColor: 'var(--border)' }}
                           >
                             <XCircle className="w-4 h-4" />
                             Reject

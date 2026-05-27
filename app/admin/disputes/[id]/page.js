@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, AlertTriangle, CheckCircle, XCircle, Ban } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, CheckCircle, XCircle, Ban, Loader2 } from 'lucide-react';
 
 export default function DecideDispute() {
   const { user, isAdmin } = useAuth();
@@ -105,22 +105,19 @@ export default function DecideDispute() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-emerald-950/20 to-zinc-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400"></div>
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-[var(--accent)]" />
       </div>
     );
   }
 
   if (!dispute || !market) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-emerald-950/20 to-zinc-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-white text-xl mb-4">Dispute not found</p>
-          <button
-            onClick={() => router.push('/admin')}
-            className="px-6 py-3 gradient-primary rounded-xl font-medium"
-          >
-            Back to Admin Dashboard
+          <p className="text-[22px] font-medium mb-6">Dispute not found.</p>
+          <button onClick={() => router.push('/admin')} className="btn-outline">
+            Back to admin
           </button>
         </div>
       </div>
@@ -129,213 +126,193 @@ export default function DecideDispute() {
 
   const originalWinner = market.outcomes?.find(o => o.id === market.winning_outcome_id);
 
+  const decisionOptions = [
+    {
+      id: 'upheld',
+      Icon: CheckCircle,
+      title: 'Uphold original resolution',
+      copy: 'The original resolution is correct. Market will become final.',
+      tone: 'accent'
+    },
+    {
+      id: 'overturned',
+      Icon: XCircle,
+      title: 'Overturn & re-resolve',
+      copy: 'Original resolution is incorrect. Select the correct winner below.',
+      tone: 'accent'
+    },
+    {
+      id: 'invalidated',
+      Icon: Ban,
+      title: 'Invalidate market',
+      copy: 'Market cannot be resolved fairly. All predictions will be refunded.',
+      tone: 'danger'
+    }
+  ];
+
+  const canSubmit = decision && adminDecision.trim() && (decision !== 'overturned' || newWinningOutcomeId) && !submitting;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-emerald-950/20 to-zinc-900 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
+    <div className="min-h-screen py-12 px-4">
+      <div className="max-w-3xl mx-auto">
         <button
           onClick={() => router.push('/admin')}
-          className="flex items-center gap-2 text-zinc-400 hover:text-white mb-6 transition-colors"
+          className="flex items-center gap-2 text-[14px] text-[var(--text-muted)] hover:text-[var(--text)] mb-8 transition-colors"
         >
-          <ArrowLeft className="w-5 h-5" />
-          Back to Admin Dashboard
+          <ArrowLeft className="w-4 h-4" />
+          Back to admin
         </button>
 
-        <div className="glass-dark p-8 rounded-3xl border border-red-500/20 mb-6">
-          <div className="flex items-start gap-4 mb-6">
-            <div className="p-3 bg-red-500/20 rounded-2xl">
-              <AlertTriangle className="w-8 h-8 text-red-400" />
+        <div className="section-marker mb-3">
+          <span className="section-marker-num">§ DIS</span> / DISPUTE
+        </div>
+
+        <h1 className="text-[36px] font-medium tracking-tight mb-2">Decide dispute</h1>
+        <p className="text-[15px] text-[var(--text-muted)] mb-10 max-w-xl">
+          Review the dispute and rule on it. Your decision is final and triggers payout adjustments.
+        </p>
+
+        {/* Market Info */}
+        <div className="surface-card mb-6">
+          <h2 className="text-[22px] font-medium tracking-tight mb-3">{market.question}</h2>
+          {market.description && (
+            <p className="text-[14px] text-[var(--text-muted)] mb-6">{market.description}</p>
+          )}
+          <div className="flex items-center gap-4 text-[13px]">
+            <span className="tab-pill" data-active="true">Resolved</span>
+            <span className="text-[var(--text-muted)]">
+              Original winner: <span className="font-medium text-[var(--accent)]">{originalWinner?.outcome_text}</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Dispute Details */}
+        <div className="surface-card-sm mb-6">
+          <h3 className="text-[15px] font-medium flex items-center gap-2 mb-4">
+            <AlertTriangle className="w-4 h-4 text-[var(--danger)]" />
+            Dispute details
+          </h3>
+          <div className="space-y-3 text-[13px]">
+            <div>
+              <p className="eyebrow mb-1">Initiated by</p>
+              <p className="font-medium">{dispute.initiator?.username}</p>
             </div>
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-white mb-2">Decide Dispute</h1>
-              <p className="text-zinc-400">Review the dispute and make your decision</p>
+            <div>
+              <p className="eyebrow mb-1">Reason</p>
+              <p>{dispute.reason}</p>
+            </div>
+            <div>
+              <p className="eyebrow mb-1">Disputed at</p>
+              <p className="font-mono text-[var(--text-muted)]">{new Date(dispute.created_at).toLocaleString()}</p>
             </div>
           </div>
+        </div>
 
-          {/* Market Info */}
-          <div className="glass-dark p-6 rounded-2xl mb-6">
-            <h2 className="text-2xl font-bold text-white mb-4">{market.question}</h2>
-            {market.description && (
-              <p className="text-zinc-400 mb-4">{market.description}</p>
-            )}
-
-            <div className="flex items-center gap-4 text-sm">
-              <span className="px-3 py-1 bg-purple-500/20 text-purple-400 rounded-full font-medium">
-                Resolved
-              </span>
-              <span className="text-zinc-500">
-                Winner: <span className="text-emerald-400 font-medium">{originalWinner?.outcome_text}</span>
-              </span>
-            </div>
-          </div>
-
-          {/* Dispute Details */}
-          <div className="glass-dark p-6 rounded-2xl mb-6 border border-red-500/20">
-            <h3 className="text-lg font-bold text-white mb-4">Dispute Details</h3>
-            <div className="space-y-4">
-              <div>
-                <p className="text-zinc-500 text-sm mb-1">Initiated By</p>
-                <p className="text-white font-medium">{dispute.initiator?.username}</p>
-              </div>
-              <div>
-                <p className="text-zinc-500 text-sm mb-1">Reason</p>
-                <p className="text-white">{dispute.reason}</p>
-              </div>
-              <div>
-                <p className="text-zinc-500 text-sm mb-1">Disputed At</p>
-                <p className="text-zinc-400">{new Date(dispute.created_at).toLocaleString()}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Decision Options */}
-          <div className="mb-6">
-            <h3 className="text-lg font-bold text-white mb-4">Your Decision</h3>
-            <div className="grid grid-cols-1 gap-3">
-              {/* Upheld */}
+        {/* Decision Options */}
+        <h3 className="text-[18px] font-medium mb-3">Your decision</h3>
+        <div className="grid grid-cols-1 gap-3 mb-8">
+          {decisionOptions.map(({ id, Icon, title, copy, tone }) => {
+            const isSelected = decision === id;
+            const isDanger = tone === 'danger';
+            return (
               <button
-                onClick={() => setDecision('upheld')}
-                className={`p-6 rounded-2xl border-2 transition-all text-left ${
-                  decision === 'upheld'
-                    ? 'border-emerald-500 bg-emerald-500/20 shadow-lg shadow-emerald-500/30'
-                    : 'border-zinc-700 glass-dark hover:border-emerald-500/50'
-                }`}
+                key={id}
+                onClick={() => setDecision(id)}
+                className="surface-card-sm text-left transition-all"
+                style={{
+                  borderColor: isSelected ? (isDanger ? 'var(--danger)' : 'var(--accent)') : 'var(--border)',
+                  background: isSelected ? (isDanger ? 'var(--danger-soft)' : 'var(--accent-soft)') : 'var(--card)',
+                  color: isSelected ? (isDanger ? 'var(--danger-ink)' : 'var(--accent-ink)') : 'var(--text)'
+                }}
               >
                 <div className="flex items-start gap-4">
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1 ${
-                    decision === 'upheld' ? 'border-emerald-400 bg-emerald-400' : 'border-zinc-600'
-                  }`}>
-                    {decision === 'upheld' && <CheckCircle className="w-4 h-4 text-white" />}
+                  <div
+                    className="w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 mt-0.5"
+                    style={{
+                      borderColor: isSelected ? (isDanger ? 'var(--danger)' : 'var(--accent)') : 'var(--border-strong)',
+                      background: isSelected ? (isDanger ? 'var(--danger)' : 'var(--accent)') : 'transparent'
+                    }}
+                  >
+                    {isSelected && <CheckCircle className="w-3 h-3" style={{ color: isDanger ? 'var(--danger-ink)' : 'var(--accent-ink)' }} />}
                   </div>
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <CheckCircle className="w-5 h-5 text-emerald-400" />
-                      <p className="text-white font-bold">Uphold Original Resolution</p>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <Icon className="w-4 h-4" style={{ color: isDanger ? 'var(--danger)' : 'var(--accent)' }} />
+                      <p className="text-[15px] font-medium">{title}</p>
                     </div>
-                    <p className="text-zinc-400 text-sm">
-                      The original resolution is correct. Market will become final.
+                    <p className="text-[13px]" style={{ color: isSelected ? 'inherit' : 'var(--text-muted)' }}>
+                      {copy}
                     </p>
                   </div>
                 </div>
               </button>
+            );
+          })}
+        </div>
 
-              {/* Overturned */}
-              <button
-                onClick={() => setDecision('overturned')}
-                className={`p-6 rounded-2xl border-2 transition-all text-left ${
-                  decision === 'overturned'
-                    ? 'border-orange-500 bg-orange-500/20 shadow-lg shadow-orange-500/30'
-                    : 'border-zinc-700 glass-dark hover:border-orange-500/50'
-                }`}
-              >
-                <div className="flex items-start gap-4">
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1 ${
-                    decision === 'overturned' ? 'border-orange-400 bg-orange-400' : 'border-zinc-600'
-                  }`}>
-                    {decision === 'overturned' && <CheckCircle className="w-4 h-4 text-white" />}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <XCircle className="w-5 h-5 text-orange-400" />
-                      <p className="text-white font-bold">Overturn & Re-resolve</p>
-                    </div>
-                    <p className="text-zinc-400 text-sm">
-                      Original resolution is incorrect. Select the correct winner below.
-                    </p>
-                  </div>
-                </div>
-              </button>
-
-              {/* Invalidated */}
-              <button
-                onClick={() => setDecision('invalidated')}
-                className={`p-6 rounded-2xl border-2 transition-all text-left ${
-                  decision === 'invalidated'
-                    ? 'border-red-500 bg-red-500/20 shadow-lg shadow-red-500/30'
-                    : 'border-zinc-700 glass-dark hover:border-red-500/50'
-                }`}
-              >
-                <div className="flex items-start gap-4">
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1 ${
-                    decision === 'invalidated' ? 'border-red-400 bg-red-400' : 'border-zinc-600'
-                  }`}>
-                    {decision === 'invalidated' && <CheckCircle className="w-4 h-4 text-white" />}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Ban className="w-5 h-5 text-red-400" />
-                      <p className="text-white font-bold">Invalidate Market</p>
-                    </div>
-                    <p className="text-zinc-400 text-sm">
-                      Market cannot be resolved fairly. All predictions will be refunded.
-                    </p>
-                  </div>
-                </div>
-              </button>
-            </div>
-          </div>
-
-          {/* Select New Winner (if overturned) */}
-          {decision === 'overturned' && (
-            <div className="mb-6 p-6 glass-dark rounded-2xl border border-orange-500/20">
-              <h4 className="text-lg font-bold text-white mb-4">Select Correct Winner</h4>
-              <div className="space-y-3">
-                {market.outcomes?.map(outcome => (
+        {/* Select New Winner (if overturned) */}
+        {decision === 'overturned' && (
+          <div className="surface-card-sm mb-6">
+            <h4 className="text-[15px] font-medium mb-4">Select correct winner</h4>
+            <div className="space-y-2">
+              {market.outcomes?.map(outcome => {
+                const isPicked = newWinningOutcomeId === outcome.id;
+                const isCurrent = outcome.id === market.winning_outcome_id;
+                return (
                   <button
                     key={outcome.id}
                     onClick={() => setNewWinningOutcomeId(outcome.id)}
-                    className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
-                      newWinningOutcomeId === outcome.id
-                        ? 'border-orange-500 bg-orange-500/20'
-                        : 'border-zinc-700 hover:border-orange-500/50'
-                    }`}
+                    className="w-full p-4 rounded-[10px] border text-left transition-all flex items-center gap-3"
+                    style={{
+                      borderColor: isPicked ? 'var(--accent)' : 'var(--border)',
+                      background: isPicked ? 'var(--accent-soft)' : 'transparent',
+                      color: isPicked ? 'var(--accent-ink)' : 'var(--text)'
+                    }}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                        newWinningOutcomeId === outcome.id ? 'border-orange-400 bg-orange-400' : 'border-zinc-600'
-                      }`}>
-                        {newWinningOutcomeId === outcome.id && <CheckCircle className="w-3 h-3 text-white" />}
-                      </div>
-                      <p className="text-white font-medium">{outcome.outcome_text}</p>
-                      {outcome.id === market.winning_outcome_id && (
-                        <span className="ml-auto px-2 py-1 bg-purple-500/20 text-purple-400 text-xs rounded-full">
-                          Current Winner
-                        </span>
-                      )}
+                    <div
+                      className="w-4 h-4 rounded-full border flex items-center justify-center"
+                      style={{
+                        borderColor: isPicked ? 'var(--accent)' : 'var(--border-strong)',
+                        background: isPicked ? 'var(--accent)' : 'transparent'
+                      }}
+                    >
+                      {isPicked && <CheckCircle className="w-2.5 h-2.5 text-[var(--accent-ink)]" />}
                     </div>
+                    <p className="text-[14px] font-medium">{outcome.outcome_text}</p>
+                    {isCurrent && (
+                      <span className="ml-auto tab-pill text-[11px]">Current winner</span>
+                    )}
                   </button>
-                ))}
-              </div>
+                );
+              })}
             </div>
-          )}
-
-          {/* Admin Reasoning */}
-          <div className="mb-6">
-            <label className="block text-white font-medium mb-2">
-              Your Reasoning <span className="text-red-400">*</span>
-            </label>
-            <textarea
-              value={adminDecision}
-              onChange={(e) => setAdminDecision(e.target.value)}
-              placeholder="Explain your decision and reasoning..."
-              className="w-full px-4 py-3 bg-black/40 border border-zinc-700 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition-colors resize-none"
-              rows={4}
-            />
           </div>
+        )}
 
-          {/* Submit Button */}
-          <button
-            onClick={handleSubmit}
-            disabled={!decision || !adminDecision.trim() || (decision === 'overturned' && !newWinningOutcomeId) || submitting}
-            className={`w-full py-4 rounded-xl font-bold text-lg transition-all ${
-              !decision || !adminDecision.trim() || (decision === 'overturned' && !newWinningOutcomeId) || submitting
-                ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
-                : 'gradient-primary hover:shadow-2xl hover:shadow-emerald-500/40 hover:scale-[1.02]'
-            }`}
-          >
-            {submitting ? 'Submitting...' : 'Submit Decision'}
-          </button>
+        {/* Admin Reasoning */}
+        <div className="mb-6">
+          <label className="block text-[15px] font-medium mb-1.5">
+            Your reasoning <span className="text-[var(--danger)]">*</span>
+          </label>
+          <p className="text-[13px] text-[var(--text-muted)] mb-3">
+            Document the rationale for the public verdict feed.
+          </p>
+          <textarea
+            value={adminDecision}
+            onChange={(e) => setAdminDecision(e.target.value)}
+            placeholder="Explain your decision and reasoning..."
+            className="input-paper resize-none"
+            rows={4}
+          />
         </div>
+
+        <button
+          onClick={handleSubmit}
+          disabled={!canSubmit}
+          className={canSubmit ? 'btn-mint w-full' : 'btn-outline w-full'}
+        >
+          {submitting ? 'Submitting…' : 'Submit decision'}
+        </button>
       </div>
     </div>
   );

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Settings, Save, Info } from 'lucide-react';
+import { ArrowLeft, Save, Info, Loader2 } from 'lucide-react';
 
 export default function PlatformSettings() {
   const { user, isAdmin } = useAuth();
@@ -75,156 +75,103 @@ export default function PlatformSettings() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-emerald-950/20 to-zinc-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400"></div>
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-[var(--accent)]" />
       </div>
     );
   }
 
+  const fields = [
+    {
+      key: 'required_approval_votes',
+      label: 'Required Approval Votes',
+      help: 'Number of community approvals needed for a proposed market to be activated.',
+      unit: 'votes',
+      props: { type: 'number', min: 1, max: 50, defaultValue: 10, parse: parseInt }
+    },
+    {
+      key: 'approval_deadline_hours',
+      label: 'Approval Deadline (Hours)',
+      help: 'Time window for community to approve proposed markets before they expire.',
+      unit: 'hours',
+      props: { type: 'number', min: 1, max: 168, defaultValue: 15, parse: parseInt }
+    },
+    {
+      key: 'dispute_window_hours',
+      label: 'Dispute Window (Hours)',
+      help: 'Time window after resolution during which users can dispute the outcome.',
+      unit: 'hours',
+      props: { type: 'number', min: 1, max: 168, defaultValue: 24, parse: parseInt }
+    },
+    {
+      key: 'platform_fee_percentage',
+      label: 'Platform Fee (%)',
+      help: 'Percentage fee deducted from each prediction (decimal value, e.g., 1.0 for 1%).',
+      unit: '%',
+      props: { type: 'number', min: 0, max: 10, step: 0.1, defaultValue: 1, parse: parseFloat }
+    },
+    {
+      key: 'starting_balance',
+      label: 'Starting Balance (LO)',
+      help: 'Initial point balance given to new users when they register.',
+      unit: 'LO',
+      props: { type: 'number', min: 0, step: 1, defaultValue: 100, parse: parseInt }
+    }
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-emerald-950/20 to-zinc-900 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
+    <div className="min-h-screen py-12 px-4">
+      <div className="max-w-3xl mx-auto">
         <button
           onClick={() => router.push('/admin')}
-          className="flex items-center gap-2 text-zinc-400 hover:text-white mb-6 transition-colors"
+          className="flex items-center gap-2 text-[14px] text-[var(--text-muted)] hover:text-[var(--text)] mb-8 transition-colors"
         >
-          <ArrowLeft className="w-5 h-5" />
-          Back to Admin Dashboard
+          <ArrowLeft className="w-4 h-4" />
+          Back to admin
         </button>
 
-        <div className="glass-dark p-8 rounded-3xl border border-emerald-500/20">
-          <div className="flex items-start gap-4 mb-8">
-            <div className="p-3 bg-emerald-500/20 rounded-2xl">
-              <Settings className="w-8 h-8 text-emerald-400" />
-            </div>
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-white mb-2">Platform Settings</h1>
-              <p className="text-zinc-400">Configure global platform parameters</p>
-            </div>
-          </div>
-
-          {/* Warning */}
-          <div className="flex items-start gap-3 p-4 bg-orange-500/10 border border-orange-500/30 rounded-xl mb-8">
-            <Info className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-orange-400 font-medium mb-1">Important</p>
-              <p className="text-orange-300/80 text-sm">
-                Changes to these settings will affect all future markets and new users. 
-                Existing markets will not be affected by these changes.
-              </p>
-            </div>
-          </div>
-
-          {/* Settings Form */}
-          <div className="space-y-6">
-            {/* Approval Votes */}
-            <div className="glass-dark p-6 rounded-2xl">
-              <label className="block text-white font-bold text-lg mb-2">
-                Required Approval Votes
-              </label>
-              <p className="text-zinc-400 text-sm mb-4">
-                Number of community approvals needed for a proposed market to be activated
-              </p>
-              <input
-                type="number"
-                min="1"
-                max="50"
-                value={settings?.required_approval_votes || 10}
-                onChange={(e) => updateSetting('required_approval_votes', parseInt(e.target.value))}
-                className="w-full px-4 py-3 bg-black/40 border border-zinc-700 rounded-xl text-white focus:outline-none focus:border-emerald-500 transition-colors"
-              />
-              <p className="text-zinc-500 text-xs mt-2">Current: {settings?.required_approval_votes} votes</p>
-            </div>
-
-            {/* Approval Deadline */}
-            <div className="glass-dark p-6 rounded-2xl">
-              <label className="block text-white font-bold text-lg mb-2">
-                Approval Deadline (Hours)
-              </label>
-              <p className="text-zinc-400 text-sm mb-4">
-                Time window for community to approve proposed markets before they expire
-              </p>
-              <input
-                type="number"
-                min="1"
-                max="168"
-                value={settings?.approval_deadline_hours || 15}
-                onChange={(e) => updateSetting('approval_deadline_hours', parseInt(e.target.value))}
-                className="w-full px-4 py-3 bg-black/40 border border-zinc-700 rounded-xl text-white focus:outline-none focus:border-emerald-500 transition-colors"
-              />
-              <p className="text-zinc-500 text-xs mt-2">Current: {settings?.approval_deadline_hours} hours</p>
-            </div>
-
-            {/* Dispute Window */}
-            <div className="glass-dark p-6 rounded-2xl">
-              <label className="block text-white font-bold text-lg mb-2">
-                Dispute Window (Hours)
-              </label>
-              <p className="text-zinc-400 text-sm mb-4">
-                Time window after resolution during which users can dispute the outcome
-              </p>
-              <input
-                type="number"
-                min="1"
-                max="168"
-                value={settings?.dispute_window_hours || 24}
-                onChange={(e) => updateSetting('dispute_window_hours', parseInt(e.target.value))}
-                className="w-full px-4 py-3 bg-black/40 border border-zinc-700 rounded-xl text-white focus:outline-none focus:border-emerald-500 transition-colors"
-              />
-              <p className="text-zinc-500 text-xs mt-2">Current: {settings?.dispute_window_hours} hours</p>
-            </div>
-
-            {/* Platform Fee */}
-            <div className="glass-dark p-6 rounded-2xl">
-              <label className="block text-white font-bold text-lg mb-2">
-                Platform Fee (%)
-              </label>
-              <p className="text-zinc-400 text-sm mb-4">
-                Percentage fee deducted from each prediction (decimal value, e.g., 1.0 for 1%)
-              </p>
-              <input
-                type="number"
-                min="0"
-                max="10"
-                step="0.1"
-                value={settings?.platform_fee_percentage || 1}
-                onChange={(e) => updateSetting('platform_fee_percentage', parseFloat(e.target.value))}
-                className="w-full px-4 py-3 bg-black/40 border border-zinc-700 rounded-xl text-white focus:outline-none focus:border-emerald-500 transition-colors"
-              />
-              <p className="text-zinc-500 text-xs mt-2">Current: {settings?.platform_fee_percentage}%</p>
-            </div>
-
-            {/* Starting Balance */}
-            <div className="glass-dark p-6 rounded-2xl">
-              <label className="block text-white font-bold text-lg mb-2">
-                Starting Balance (Points)
-              </label>
-              <p className="text-zinc-400 text-sm mb-4">
-                Initial point balance given to new users when they register
-              </p>
-              <input
-                type="number"
-                min="0"
-                step="1"
-                value={settings?.starting_balance || 100}
-                onChange={(e) => updateSetting('starting_balance', parseInt(e.target.value))}
-                className="w-full px-4 py-3 bg-black/40 border border-zinc-700 rounded-xl text-white focus:outline-none focus:border-emerald-500 transition-colors"
-              />
-              <p className="text-zinc-500 text-xs mt-2">Current: {settings?.starting_balance} LO</p>
-            </div>
-          </div>
-
-          {/* Save Button */}
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="w-full mt-8 py-4 rounded-xl font-bold text-lg gradient-primary hover:shadow-2xl hover:shadow-emerald-500/40 hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            <Save className="w-5 h-5" />
-            {saving ? 'Saving...' : 'Save Settings'}
-          </button>
+        <div className="section-marker mb-3">
+          <span className="section-marker-num">§ 01</span> / PLATFORM
         </div>
+
+        <h1 className="text-[36px] font-medium tracking-tight mb-2">Platform settings</h1>
+        <p className="text-[15px] text-[var(--text-muted)] mb-10 max-w-xl">
+          Configure global platform parameters. Changes affect future markets and new users only — existing markets are untouched.
+        </p>
+
+        <div className="note-block mb-10 flex items-start gap-3">
+          <Info className="w-4 h-4 mt-1 flex-shrink-0 text-[var(--accent)]" />
+          <p className="text-[13px] text-[var(--text-muted)]">
+            Confirm with the team before changing fee percentage or starting balance — both reshape the protocol economy.
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          {fields.map(({ key, label, help, unit, props: { parse, defaultValue, ...inputProps } }) => (
+            <div key={key} className="surface-card-sm">
+              <label className="block text-[15px] font-medium mb-1.5">{label}</label>
+              <p className="text-[13px] text-[var(--text-muted)] mb-4">{help}</p>
+              <input
+                {...inputProps}
+                value={settings?.[key] ?? defaultValue}
+                onChange={(e) => updateSetting(key, parse(e.target.value))}
+                className="input-paper font-mono"
+              />
+              <p className="text-[12px] text-[var(--text-muted)] mt-2">
+                Current: <span className="font-mono text-[var(--text)]">{settings?.[key]}</span> {unit}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="btn-mint mt-10 inline-flex items-center gap-2"
+        >
+          <Save className="w-4 h-4" />
+          {saving ? 'Saving…' : 'Save settings'}
+        </button>
       </div>
     </div>
   );

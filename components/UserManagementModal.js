@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, UserCircle, DollarSign, Shield } from 'lucide-react';
+import { X, DollarSign, Shield } from 'lucide-react';
 
 export default function UserManagementModal({ user, onClose, onUpdate }) {
   const [action, setAction] = useState('');
@@ -52,88 +52,90 @@ export default function UserManagementModal({ user, onClose, onUpdate }) {
     }
   };
 
+  const balanceDelta = parseFloat(newBalance) - parseFloat(user.points_balance || 0);
+
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="glass-light rounded-3xl border border-emerald-500/20 max-w-lg w-full shadow-2xl">
-        <div className="p-6 border-b border-zinc-700/50">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
-                <span className="text-white font-bold text-xl">
-                  {user.username.charAt(0).toUpperCase()}
-                </span>
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-white">Manage User</h3>
-                <p className="text-zinc-400 text-sm">{user.username}</p>
-              </div>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 transition-all"
+    <div className="scrim fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div
+        className="w-full max-w-lg rounded-3xl max-h-[90vh] overflow-y-auto"
+        style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
+      >
+        {/* Header */}
+        <div className="p-6 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border)' }}>
+          <div className="flex items-center gap-3">
+            <div
+              className="w-10 h-10 rounded-[10px] flex items-center justify-center"
+              style={{ background: 'var(--accent-soft)', color: 'var(--accent-ink)' }}
             >
-              <X className="w-6 h-6" />
-            </button>
+              <span className="font-mono text-[16px] font-medium">
+                {user.username.charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div>
+              <h3 className="text-[18px] font-medium">Manage user</h3>
+              <p className="text-[13px] font-mono text-[var(--text-muted)]">{user.username}</p>
+            </div>
           </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-[10px] text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
+            style={{ border: '1px solid var(--border)' }}
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
         <div className="p-6">
           {/* Current Info */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="glass-dark p-4 rounded-xl">
-              <p className="text-zinc-500 text-xs mb-1">Current Balance</p>
-              <p className="text-white font-bold text-lg">{parseFloat(user.points_balance || 0).toFixed(0)} LO</p>
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            <div className="surface-card-sm">
+              <p className="eyebrow mb-1">Current balance</p>
+              <p className="font-mono text-[20px] font-medium">
+                {parseFloat(user.points_balance || 0).toFixed(0)}
+                <span className="ml-1 text-[12px] text-[var(--text-muted)]">LO</span>
+              </p>
             </div>
-            <div className="glass-dark p-4 rounded-xl">
-              <p className="text-zinc-500 text-xs mb-1">Current Role</p>
-              <p className="text-white font-bold text-lg capitalize">{user.role}</p>
+            <div className="surface-card-sm">
+              <p className="eyebrow mb-1">Current role</p>
+              <p className="text-[20px] font-medium capitalize">{user.role}</p>
             </div>
           </div>
 
           {/* Action Selection */}
-          <div className="mb-6">
-            <label className="block text-white font-medium mb-3">Select Action</label>
-            <div className="space-y-3">
-              <button
-                onClick={() => setAction('update_balance')}
-                className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
-                  action === 'update_balance'
-                    ? 'border-emerald-500 bg-emerald-500/20'
-                    : 'border-zinc-700 hover:border-emerald-500/50'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <DollarSign className="w-5 h-5 text-emerald-400" />
-                  <div>
-                    <p className="text-white font-medium">Update Balance</p>
-                    <p className="text-zinc-400 text-sm">Adjust user's point balance</p>
+          <label className="block text-[15px] font-medium mb-3">Select action</label>
+          <div className="space-y-2 mb-6">
+            {[
+              { id: 'update_balance', Icon: DollarSign, title: 'Update balance', copy: 'Adjust user’s LO balance.' },
+              { id: 'update_role',    Icon: Shield,     title: 'Change role',    copy: 'Modify user’s permission level.' }
+            ].map(({ id, Icon, title, copy }) => {
+              const isSelected = action === id;
+              return (
+                <button
+                  key={id}
+                  onClick={() => setAction(id)}
+                  className="w-full p-4 rounded-[10px] border text-left transition-all"
+                  style={{
+                    borderColor: isSelected ? 'var(--accent)' : 'var(--border)',
+                    background: isSelected ? 'var(--accent-soft)' : 'transparent',
+                    color: isSelected ? 'var(--accent-ink)' : 'var(--text)'
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon className="w-4 h-4 text-[var(--accent)]" />
+                    <div>
+                      <p className="text-[14px] font-medium">{title}</p>
+                      <p className="text-[12px]" style={{ color: isSelected ? 'inherit' : 'var(--text-muted)' }}>{copy}</p>
+                    </div>
                   </div>
-                </div>
-              </button>
-
-              <button
-                onClick={() => setAction('update_role')}
-                className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
-                  action === 'update_role'
-                    ? 'border-blue-500 bg-blue-500/20'
-                    : 'border-zinc-700 hover:border-blue-500/50'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Shield className="w-5 h-5 text-blue-400" />
-                  <div>
-                    <p className="text-white font-medium">Change Role</p>
-                    <p className="text-zinc-400 text-sm">Modify user's permission level</p>
-                  </div>
-                </div>
-              </button>
-            </div>
+                </button>
+              );
+            })}
           </div>
 
           {/* Update Balance Form */}
           {action === 'update_balance' && (
-            <div className="mb-6 p-4 glass-dark rounded-xl border border-emerald-500/20">
-              <label className="block text-white font-medium mb-2">New Balance</label>
+            <div className="surface-card-sm mb-6">
+              <label className="block text-[14px] font-medium mb-2">New balance</label>
               <div className="flex items-center gap-3">
                 <input
                   type="number"
@@ -141,45 +143,46 @@ export default function UserManagementModal({ user, onClose, onUpdate }) {
                   onChange={(e) => setNewBalance(e.target.value)}
                   min="0"
                   step="1"
-                  className="flex-1 px-4 py-3 bg-black/40 border border-zinc-700 rounded-xl text-white focus:outline-none focus:border-emerald-500 transition-colors"
+                  className="input-paper font-mono"
                 />
-                <span className="text-zinc-400 font-medium">LO</span>
+                <span className="text-[13px] font-mono text-[var(--text-muted)]">LO</span>
               </div>
-              <p className="text-zinc-500 text-xs mt-2">
-                Current: {parseFloat(user.points_balance || 0).toFixed(0)} LO • 
-                Change: {(parseFloat(newBalance) - parseFloat(user.points_balance || 0)) > 0 ? '+' : ''}{(parseFloat(newBalance) - parseFloat(user.points_balance || 0)).toFixed(0)} LO
+              <p className="text-[12px] text-[var(--text-muted)] mt-2 font-mono">
+                Δ {balanceDelta > 0 ? '+' : ''}{balanceDelta.toFixed(0)} LO
               </p>
             </div>
           )}
 
           {/* Update Role Form */}
           {action === 'update_role' && (
-            <div className="mb-6 p-4 glass-dark rounded-xl border border-blue-500/20">
-              <label className="block text-white font-medium mb-2">New Role</label>
+            <div className="surface-card-sm mb-6">
+              <label className="block text-[14px] font-medium mb-3">New role</label>
               <div className="space-y-2">
-                {['admin', 'member', 'viewer'].map(role => (
-                  <button
-                    key={role}
-                    onClick={() => setNewRole(role)}
-                    className={`w-full p-3 rounded-lg border transition-all text-left ${
-                      newRole === role
-                        ? 'border-blue-500 bg-blue-500/20'
-                        : 'border-zinc-700 hover:border-blue-500/50'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-white font-medium capitalize">{role}</span>
-                      {role === user.role && (
-                        <span className="px-2 py-1 bg-zinc-700 text-zinc-400 text-xs rounded">Current</span>
-                      )}
-                    </div>
-                  </button>
-                ))}
+                {['admin', 'member', 'viewer'].map(role => {
+                  const isPicked = newRole === role;
+                  return (
+                    <button
+                      key={role}
+                      onClick={() => setNewRole(role)}
+                      className="w-full p-3 rounded-[10px] border text-left transition-all"
+                      style={{
+                        borderColor: isPicked ? 'var(--accent)' : 'var(--border)',
+                        background: isPicked ? 'var(--accent-soft)' : 'transparent',
+                        color: isPicked ? 'var(--accent-ink)' : 'var(--text)'
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[14px] font-medium capitalize">{role}</span>
+                        {role === user.role && (
+                          <span className="tab-pill text-[11px]">Current</span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
-              <p className="text-zinc-500 text-xs mt-3">
-                <strong>Admin:</strong> Full platform control • 
-                <strong>Member:</strong> Create & predict • 
-                <strong>Viewer:</strong> View only
+              <p className="text-[12px] text-[var(--text-muted)] mt-3 leading-relaxed">
+                <span className="font-medium text-[var(--text)]">Admin</span> — full platform control · <span className="font-medium text-[var(--text)]">Member</span> — create & predict · <span className="font-medium text-[var(--text)]">Viewer</span> — read only.
               </p>
             </div>
           )}
@@ -189,16 +192,16 @@ export default function UserManagementModal({ user, onClose, onUpdate }) {
             <button
               onClick={onClose}
               disabled={submitting}
-              className="flex-1 px-6 py-3 glass-dark rounded-xl text-white font-medium hover:bg-white/5 transition-all disabled:opacity-50"
+              className="btn-outline flex-1"
             >
               Cancel
             </button>
             <button
               onClick={handleSubmit}
               disabled={!action || submitting}
-              className="flex-1 px-6 py-3 gradient-primary rounded-xl text-white font-medium hover:shadow-lg hover:shadow-emerald-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-mint flex-1"
             >
-              {submitting ? 'Updating...' : 'Update User'}
+              {submitting ? 'Updating…' : 'Update user'}
             </button>
           </div>
         </div>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, CheckCircle, AlertTriangle, TrendingUp } from 'lucide-react';
+import { ArrowLeft, CheckCircle, AlertTriangle, TrendingUp, Loader2 } from 'lucide-react';
 
 export default function ResolveMarket() {
   const { user, isAdmin } = useAuth();
@@ -82,22 +82,19 @@ export default function ResolveMarket() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-emerald-950/20 to-zinc-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400"></div>
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-[var(--accent)]" />
       </div>
     );
   }
 
   if (!market) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-emerald-950/20 to-zinc-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-white text-xl mb-4">Market not found</p>
-          <button
-            onClick={() => router.push('/admin')}
-            className="px-6 py-3 gradient-primary rounded-xl font-medium"
-          >
-            Back to Admin Dashboard
+          <p className="text-[22px] font-medium mb-6">Market not found.</p>
+          <button onClick={() => router.push('/admin')} className="btn-outline">
+            Back to admin
           </button>
         </div>
       </div>
@@ -106,180 +103,171 @@ export default function ResolveMarket() {
 
   const totalPool = market.outcomes?.reduce((sum, o) => sum + parseFloat(o.total_staked || 0), 0) || 0;
   const totalPredictions = market.predictions_count || 0;
+  const canResolve = selectedOutcome && resolutionReason.trim() && !resolving;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-emerald-950/20 to-zinc-900 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
+    <div className="min-h-screen py-12 px-4">
+      <div className="max-w-3xl mx-auto">
         <button
           onClick={() => router.push('/admin')}
-          className="flex items-center gap-2 text-zinc-400 hover:text-white mb-6 transition-colors"
+          className="flex items-center gap-2 text-[14px] text-[var(--text-muted)] hover:text-[var(--text)] mb-8 transition-colors"
         >
-          <ArrowLeft className="w-5 h-5" />
-          Back to Admin Dashboard
+          <ArrowLeft className="w-4 h-4" />
+          Back to admin
         </button>
 
-        <div className="glass-dark p-8 rounded-3xl border border-emerald-500/20 mb-6">
-          <div className="flex items-start gap-4 mb-6">
-            <div className="p-3 bg-emerald-500/20 rounded-2xl">
-              <CheckCircle className="w-8 h-8 text-emerald-400" />
-            </div>
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-white mb-2">Resolve Market</h1>
-              <p className="text-zinc-400">Select the winning outcome and distribute payouts</p>
-            </div>
-          </div>
+        <div className="section-marker mb-3">
+          <span className="section-marker-num">§ RES</span> / RESOLUTION
+        </div>
 
-          {/* Market Info */}
-          <div className="glass-dark p-6 rounded-2xl mb-6">
-            <h2 className="text-2xl font-bold text-white mb-4">{market.question}</h2>
-            {market.description && (
-              <p className="text-zinc-400 mb-4">{market.description}</p>
-            )}
+        <h1 className="text-[36px] font-medium tracking-tight mb-2">Resolve market</h1>
+        <p className="text-[15px] text-[var(--text-muted)] mb-10 max-w-xl">
+          Select the winning outcome and distribute payouts. Users will have 24h to dispute before this becomes final.
+        </p>
 
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <p className="text-zinc-500 text-sm mb-1">Total Pool</p>
-                <p className="text-white font-bold text-xl">{totalPool.toFixed(0)} LO</p>
-              </div>
-              <div>
-                <p className="text-zinc-500 text-sm mb-1">Total Predictions</p>
-                <p className="text-white font-bold text-xl">{totalPredictions}</p>
-              </div>
-              <div>
-                <p className="text-zinc-500 text-sm mb-1">Status</p>
-                <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm font-medium">
-                  {market.status}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Warning */}
-          <div className="flex items-start gap-3 p-4 bg-orange-500/10 border border-orange-500/30 rounded-xl mb-6">
-            <AlertTriangle className="w-6 h-6 text-orange-400 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-orange-400 font-medium mb-1">Important Resolution Notes</p>
-              <ul className="text-orange-300/80 text-sm space-y-1">
-                <li>• Payouts will be distributed immediately to all winning predictions</li>
-                <li>• Users will have 24 hours to dispute this resolution</li>
-                <li>• During the dispute period, market status will be "resolved"</li>
-                <li>• After 24 hours with no disputes, market becomes "final"</li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Select Winning Outcome */}
-          <div>
-            <h3 className="text-xl font-bold text-white mb-4">Select Winning Outcome</h3>
-            <div className="space-y-3">
-              {market.outcomes?.map(outcome => {
-                const staked = parseFloat(outcome.total_staked || 0);
-                const percentage = totalPool > 0 ? (staked / totalPool) * 100 : 0;
-                const isSelected = selectedOutcome?.id === outcome.id;
-
-                return (
-                  <button
-                    key={outcome.id}
-                    onClick={() => setSelectedOutcome(outcome)}
-                    className={`w-full p-6 rounded-2xl border-2 transition-all text-left ${
-                      isSelected
-                        ? 'border-emerald-500 bg-emerald-500/20 shadow-lg shadow-emerald-500/30'
-                        : 'border-zinc-700 glass-dark hover:border-emerald-500/50'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                            isSelected ? 'border-emerald-400 bg-emerald-400' : 'border-zinc-600'
-                          }`}>
-                            {isSelected && <CheckCircle className="w-4 h-4 text-white" />}
-                          </div>
-                          <p className="text-white font-bold text-lg">{outcome.outcome_text}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-white font-bold text-2xl mb-1">{percentage.toFixed(1)}%</p>
-                        <p className="text-zinc-400 text-sm">{staked.toFixed(0)} LO staked</p>
-                      </div>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="w-full bg-zinc-800 rounded-full h-2 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${
-                          isSelected ? 'bg-gradient-to-r from-emerald-400 to-emerald-600' : 'bg-gradient-to-r from-zinc-600 to-zinc-700'
-                        }`}
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Payout Preview */}
-          {selectedOutcome && (
-            <div className="mt-6 p-6 glass-dark rounded-2xl border border-emerald-500/20">
-              <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-emerald-400" />
-                Payout Preview
-              </h4>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-zinc-400">Winning Pool</span>
-                  <span className="text-white font-medium">{parseFloat(selectedOutcome.total_staked).toFixed(0)} LO</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-400">Losing Pool</span>
-                  <span className="text-white font-medium">
-                    {(totalPool - parseFloat(selectedOutcome.total_staked)).toFixed(0)} LO
-                  </span>
-                </div>
-                <div className="h-px bg-zinc-700 my-2"></div>
-                <div className="flex justify-between text-base">
-                  <span className="text-zinc-300">Total to Distribute</span>
-                  <span className="text-emerald-400 font-bold">{totalPool.toFixed(0)} LO</span>
-                </div>
-                <p className="text-zinc-500 text-xs mt-4">
-                  Winners will receive their original stake plus a proportional share of the losing pool
-                </p>
-              </div>
-            </div>
+        {/* Market Info */}
+        <div className="surface-card mb-6">
+          <h2 className="text-[22px] font-medium tracking-tight mb-3">{market.question}</h2>
+          {market.description && (
+            <p className="text-[14px] text-[var(--text-muted)] mb-6">{market.description}</p>
           )}
 
-          {/* Resolution Reason */}
-          <div className="mt-6">
-            <label className="block text-white font-bold text-lg mb-2">
-              Resolution Reason <span className="text-red-400">*</span>
-            </label>
-            <p className="text-zinc-400 text-sm mb-4">
-              Explain how you determined the winning outcome
-            </p>
-            <textarea
-              value={resolutionReason}
-              onChange={(e) => setResolutionReason(e.target.value)}
-              placeholder="e.g., Based on official announcement from..."
-              className="w-full px-4 py-3 bg-black/40 border border-zinc-700 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition-colors resize-none"
-              rows={3}
-            />
+          <div className="grid grid-cols-3 gap-6">
+            <div>
+              <p className="eyebrow mb-1">Total pool</p>
+              <p className="font-mono text-[22px] font-medium">{totalPool.toFixed(0)} <span className="text-[14px] text-[var(--text-muted)]">LO</span></p>
+            </div>
+            <div>
+              <p className="eyebrow mb-1">Predictions</p>
+              <p className="font-mono text-[22px] font-medium">{totalPredictions}</p>
+            </div>
+            <div>
+              <p className="eyebrow mb-1">Status</p>
+              <span className="tab-pill text-[12px]" data-active="true">{market.status}</span>
+            </div>
           </div>
-
-          {/* Resolve Button */}
-          <button
-            onClick={handleResolve}
-            disabled={!selectedOutcome || !resolutionReason.trim() || resolving}
-            className={`w-full mt-6 py-4 rounded-xl font-bold text-lg transition-all ${
-              !selectedOutcome || !resolutionReason.trim() || resolving
-                ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
-                : 'gradient-primary hover:shadow-2xl hover:shadow-emerald-500/40 hover:scale-[1.02]'
-            }`}
-          >
-            {resolving ? 'Resolving...' : 'Resolve Market & Distribute Payouts'}
-          </button>
         </div>
+
+        {/* Warning */}
+        <div className="note-block mb-6 flex items-start gap-3">
+          <AlertTriangle className="w-4 h-4 mt-1 flex-shrink-0 text-[var(--accent)]" />
+          <div className="text-[13px] text-[var(--text-muted)]">
+            <p className="font-medium text-[var(--text)] mb-1">Resolution notes</p>
+            <ul className="space-y-1">
+              <li>— Payouts distribute immediately to winning predictions.</li>
+              <li>— Users have 24h to dispute. Market status reads &quot;resolved&quot; during the window.</li>
+              <li>— After 24h with no disputes, market becomes final.</li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Select Winning Outcome */}
+        <h3 className="text-[18px] font-medium mb-3">Select winning outcome</h3>
+        <div className="space-y-3 mb-8">
+          {market.outcomes?.map(outcome => {
+            const staked = parseFloat(outcome.total_staked || 0);
+            const percentage = totalPool > 0 ? (staked / totalPool) * 100 : 0;
+            const isSelected = selectedOutcome?.id === outcome.id;
+
+            return (
+              <button
+                key={outcome.id}
+                onClick={() => setSelectedOutcome(outcome)}
+                className="w-full text-left surface-card-sm transition-all"
+                style={{
+                  borderColor: isSelected ? 'var(--accent)' : 'var(--border)',
+                  background: isSelected ? 'var(--accent-soft)' : 'var(--card)',
+                  color: isSelected ? 'var(--accent-ink)' : 'var(--text)'
+                }}
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-5 h-5 rounded-full border flex items-center justify-center"
+                      style={{
+                        borderColor: isSelected ? 'var(--accent)' : 'var(--border-strong)',
+                        background: isSelected ? 'var(--accent)' : 'transparent'
+                      }}
+                    >
+                      {isSelected && <CheckCircle className="w-3 h-3 text-[var(--accent-ink)]" />}
+                    </div>
+                    <p className="text-[16px] font-medium">{outcome.outcome_text}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-mono text-[20px] font-medium">{percentage.toFixed(1)}%</p>
+                    <p className="text-[12px] text-[var(--text-muted)]">{staked.toFixed(0)} LO staked</p>
+                  </div>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-sunken)' }}>
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{
+                      width: `${percentage}%`,
+                      background: isSelected ? 'var(--accent)' : 'var(--border-strong)'
+                    }}
+                  />
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Payout Preview */}
+        {selectedOutcome && (
+          <div className="surface-card-sm mb-6">
+            <h4 className="text-[15px] font-medium flex items-center gap-2 mb-4">
+              <TrendingUp className="w-4 h-4 text-[var(--accent)]" />
+              Payout preview
+            </h4>
+            <div className="space-y-2 text-[13px]">
+              <div className="flex justify-between">
+                <span className="text-[var(--text-muted)]">Winning pool</span>
+                <span className="font-mono">{parseFloat(selectedOutcome.total_staked).toFixed(0)} LO</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[var(--text-muted)]">Losing pool</span>
+                <span className="font-mono">
+                  {(totalPool - parseFloat(selectedOutcome.total_staked)).toFixed(0)} LO
+                </span>
+              </div>
+              <div className="divider-line my-3" />
+              <div className="flex justify-between text-[14px]">
+                <span className="font-medium">Total to distribute</span>
+                <span className="font-mono font-medium text-[var(--accent)]">{totalPool.toFixed(0)} LO</span>
+              </div>
+              <p className="text-[12px] text-[var(--text-muted)] mt-4">
+                Winners receive their original stake plus a proportional share of the losing pool.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Resolution Reason */}
+        <div className="mb-6">
+          <label className="block text-[15px] font-medium mb-1.5">
+            Resolution reason <span className="text-[var(--danger)]">*</span>
+          </label>
+          <p className="text-[13px] text-[var(--text-muted)] mb-3">
+            Explain how you determined the winning outcome.
+          </p>
+          <textarea
+            value={resolutionReason}
+            onChange={(e) => setResolutionReason(e.target.value)}
+            placeholder="e.g., Based on official announcement from..."
+            className="input-paper resize-none"
+            rows={3}
+          />
+        </div>
+
+        <button
+          onClick={handleResolve}
+          disabled={!canResolve}
+          className={canResolve ? 'btn-mint w-full' : 'btn-outline w-full'}
+        >
+          {resolving ? 'Resolving…' : 'Resolve market & distribute payouts'}
+        </button>
       </div>
     </div>
   );

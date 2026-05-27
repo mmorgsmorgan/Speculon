@@ -8,31 +8,39 @@ import {
   TrendingUp, BarChart3, Zap, Database
 } from 'lucide-react';
 
-function StatCard({ icon: Icon, label, value, sub, color = 'text-emerald-400' }) {
+const TONE = {
+  default: 'var(--text)',
+  muted:   'var(--text-muted)',
+  accent:  'var(--accent)',
+  danger:  'var(--danger)'
+};
+
+function StatCard({ icon: Icon, label, value, sub, tone = 'default' }) {
+  const color = TONE[tone];
   return (
-    <div className="glass-dark p-5 rounded-2xl border border-zinc-800">
+    <div className="surface-card-sm">
       <div className="flex items-center justify-between mb-3">
-        <Icon className={`w-6 h-6 ${color}`} />
-        <span className={`text-2xl font-bold ${color}`}>{value}</span>
+        <Icon className="w-4 h-4" style={{ color }} />
+        <span className="font-mono text-[22px] font-medium" style={{ color }}>{value}</span>
       </div>
-      <p className="text-zinc-300 text-sm font-medium">{label}</p>
-      {sub && <p className="text-zinc-500 text-xs mt-1">{sub}</p>}
+      <p className="text-[13px] font-medium">{label}</p>
+      {sub && <p className="text-[12px] text-[var(--text-muted)] mt-1">{sub}</p>}
     </div>
   );
 }
 
-function FunnelBar({ label, count, total, color }) {
+function FunnelBar({ label, count, total, tone = 'accent' }) {
   const pct = total > 0 ? (count / total) * 100 : 0;
   return (
     <div className="flex items-center gap-3">
-      <span className="text-zinc-400 text-sm w-20 text-right flex-shrink-0">{label}</span>
-      <div className="flex-1 h-6 bg-zinc-900 rounded-lg overflow-hidden">
+      <span className="text-[12px] text-[var(--text-muted)] w-20 text-right flex-shrink-0 uppercase tracking-wider">{label}</span>
+      <div className="flex-1 h-5 rounded-[4px] overflow-hidden" style={{ background: 'var(--bg-sunken)' }}>
         <div
-          className={`h-full rounded-lg ${color} transition-all duration-500`}
-          style={{ width: `${Math.max(pct, 1)}%` }}
+          className="h-full rounded-[4px] transition-all duration-500"
+          style={{ width: `${Math.max(pct, 1)}%`, background: TONE[tone] }}
         />
       </div>
-      <span className="text-sm text-zinc-300 w-12 flex-shrink-0">{count}</span>
+      <span className="font-mono text-[13px] w-12 flex-shrink-0">{count}</span>
     </div>
   );
 }
@@ -71,62 +79,73 @@ export default function AIDashboard() {
   const ts = data?.topicStats || {};
   const topicFunnelTotal = ts.total || 1;
 
+  const KV = ({ label, value }) => (
+    <div className="flex justify-between text-[13px]">
+      <span className="text-[var(--text-muted)]">{label}</span>
+      <span className="font-mono font-medium">{value}</span>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
-      <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="min-h-screen py-12 px-4">
+      <div className="max-w-5xl mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
+        <div className="flex items-start gap-4 mb-8">
           <button
             onClick={() => router.push('/admin')}
-            className="p-2 glass-dark rounded-xl hover:bg-zinc-800 transition-all"
+            className="p-2 rounded-[10px] text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
+            style={{ border: '1px solid var(--border)' }}
           >
-            <ArrowLeft className="w-5 h-5 text-zinc-400" />
+            <ArrowLeft className="w-4 h-4" />
           </button>
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3">
-              <Brain className="w-8 h-8 text-purple-400" />
-              AI Dashboard
+          <div className="flex-1">
+            <div className="section-marker mb-2">
+              <span className="section-marker-num">§ AI</span> / PIPELINE
+            </div>
+            <h1 className="text-[36px] font-medium tracking-tight flex items-center gap-3">
+              AI dashboard
             </h1>
-            <p className="text-zinc-400 mt-1">Pipeline performance, model config, and feedback metrics</p>
+            <p className="text-[15px] text-[var(--text-muted)] mt-1">Pipeline performance, model config, and feedback metrics.</p>
           </div>
           <button
             onClick={fetchDashboard}
-            className="ml-auto p-3 glass-dark rounded-xl hover:bg-purple-500/10 transition-all"
+            className="btn-outline inline-flex items-center gap-2"
             disabled={loading}
           >
-            <RefreshCw className={`w-5 h-5 text-purple-400 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
           </button>
         </div>
 
         {loading && !data ? (
           <div className="text-center py-20">
-            <RefreshCw className="w-8 h-8 text-purple-400 animate-spin mx-auto mb-4" />
-            <p className="text-zinc-400">Loading AI metrics...</p>
+            <RefreshCw className="w-6 h-6 text-[var(--accent)] animate-spin mx-auto mb-4" />
+            <p className="text-[14px] text-[var(--text-muted)]">Loading AI metrics…</p>
           </div>
         ) : data ? (
-          <div className="space-y-8">
+          <div className="space-y-10">
             {/* Proposal Stats */}
             <section>
-              <h2 className="text-lg font-semibold text-zinc-200 mb-4 flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-emerald-400" />
-                Proposal Metrics
+              <h2 className="text-[18px] font-medium mb-4 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[var(--accent)]" />
+                Proposal metrics
               </h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <StatCard icon={BarChart3} label="Total Proposals" value={ps.total || 0} color="text-zinc-300" />
-                <StatCard icon={Zap} label="Pending Review" value={ps.pending || 0} color="text-yellow-400" sub="Awaiting admin action" />
-                <StatCard icon={TrendingUp} label="Approved" value={(ps.approved || 0) + (ps.edited || 0)} color="text-emerald-400" sub={`${ps.edited || 0} edited`} />
-                <StatCard icon={Shield} label="Rejected" value={ps.rejected || 0} color="text-red-400" />
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <StatCard icon={BarChart3} label="Total proposals"  value={ps.total || 0} tone="default" />
+                <StatCard icon={Zap}       label="Pending review"   value={ps.pending || 0} tone="muted"   sub="Awaiting admin action" />
+                <StatCard icon={TrendingUp} label="Approved"        value={(ps.approved || 0) + (ps.edited || 0)} tone="accent" sub={`${ps.edited || 0} edited`} />
+                <StatCard icon={Shield}    label="Rejected"         value={ps.rejected || 0} tone="danger" />
               </div>
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                <div className="glass-dark p-5 rounded-2xl border border-zinc-800">
-                  <p className="text-zinc-400 text-sm mb-1">Avg AI Confidence</p>
-                  <p className="text-2xl font-bold text-blue-400">
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                <div className="surface-card-sm">
+                  <p className="eyebrow mb-2">Avg AI confidence</p>
+                  <p className="font-mono text-[22px] font-medium">
                     {ps.avgConfidence ? `${(ps.avgConfidence * 100).toFixed(1)}%` : '—'}
                   </p>
                 </div>
-                <div className="glass-dark p-5 rounded-2xl border border-zinc-800">
-                  <p className="text-zinc-400 text-sm mb-1">Avg Engagement Score</p>
-                  <p className="text-2xl font-bold text-orange-400">
+                <div className="surface-card-sm">
+                  <p className="eyebrow mb-2">Avg engagement score</p>
+                  <p className="font-mono text-[22px] font-medium">
                     {ps.avgEngagementScore ? (ps.avgEngagementScore * 100).toFixed(1) : '—'}
                   </p>
                 </div>
@@ -135,18 +154,19 @@ export default function AIDashboard() {
 
             {/* Topic Funnel */}
             <section>
-              <h2 className="text-lg font-semibold text-zinc-200 mb-4 flex items-center gap-2">
-                <Database className="w-5 h-5 text-blue-400" />
-                Topic Funnel
+              <h2 className="text-[18px] font-medium mb-4 flex items-center gap-2">
+                <Database className="w-4 h-4 text-[var(--accent)]" />
+                Topic funnel
               </h2>
-              <div className="glass-dark p-6 rounded-2xl border border-zinc-800 space-y-3">
-                <FunnelBar label="Detected" count={ts.detected || 0} total={topicFunnelTotal} color="bg-zinc-600" />
-                <FunnelBar label="Scored" count={ts.scored || 0} total={topicFunnelTotal} color="bg-blue-600" />
-                <FunnelBar label="Filtered" count={ts.filtered || 0} total={topicFunnelTotal} color="bg-yellow-600" />
-                <FunnelBar label="Proposed" count={ts.proposed || 0} total={topicFunnelTotal} color="bg-purple-600" />
-                <FunnelBar label="Approved" count={ts.approved || 0} total={topicFunnelTotal} color="bg-emerald-600" />
-                <FunnelBar label="Rejected" count={ts.rejected || 0} total={topicFunnelTotal} color="bg-red-600" />
-                <div className="pt-2 border-t border-zinc-800 text-xs text-zinc-500 text-right">
+              <div className="surface-card-sm space-y-2.5">
+                <FunnelBar label="Detected"  count={ts.detected || 0} total={topicFunnelTotal} tone="muted" />
+                <FunnelBar label="Scored"    count={ts.scored || 0}   total={topicFunnelTotal} tone="muted" />
+                <FunnelBar label="Filtered"  count={ts.filtered || 0} total={topicFunnelTotal} tone="muted" />
+                <FunnelBar label="Proposed"  count={ts.proposed || 0} total={topicFunnelTotal} tone="accent" />
+                <FunnelBar label="Approved"  count={ts.approved || 0} total={topicFunnelTotal} tone="accent" />
+                <FunnelBar label="Rejected"  count={ts.rejected || 0} total={topicFunnelTotal} tone="danger" />
+                <div className="divider-line mt-3" />
+                <div className="text-[12px] text-[var(--text-muted)] text-right pt-1 font-mono">
                   Total topics: {ts.total || 0}
                 </div>
               </div>
@@ -155,45 +175,36 @@ export default function AIDashboard() {
             {/* Feedback & Policy Events */}
             <section className="grid md:grid-cols-2 gap-6">
               <div>
-                <h2 className="text-lg font-semibold text-zinc-200 mb-4 flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-orange-400" />
-                  Feedback Events
+                <h2 className="text-[18px] font-medium mb-4 flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-[var(--accent)]" />
+                  Feedback events
                 </h2>
-                <div className="glass-dark p-6 rounded-2xl border border-zinc-800 space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-zinc-400">Total Events</span>
-                    <span className="text-white font-medium">{data.feedbackEventCount || 0}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-zinc-400">Aggregation Runs</span>
-                    <span className="text-white font-medium">{data.feedbackEventBreakdown?.aggregationRuns || 0}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-zinc-400">Model Updates</span>
-                    <span className="text-white font-medium">{data.feedbackEventBreakdown?.modelUpdates || 0}</span>
-                  </div>
+                <div className="surface-card-sm space-y-3">
+                  <KV label="Total events"      value={data.feedbackEventCount || 0} />
+                  <KV label="Aggregation runs"  value={data.feedbackEventBreakdown?.aggregationRuns || 0} />
+                  <KV label="Model updates"     value={data.feedbackEventBreakdown?.modelUpdates || 0} />
                 </div>
               </div>
 
               <div>
-                <h2 className="text-lg font-semibold text-zinc-200 mb-4 flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-red-400" />
-                  Policy Events ({data.policyEventCount || 0})
+                <h2 className="text-[18px] font-medium mb-4 flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-[var(--danger)]" />
+                  Policy events ({data.policyEventCount || 0})
                 </h2>
-                <div className="glass-dark p-6 rounded-2xl border border-zinc-800">
+                <div className="surface-card-sm">
                   {data.policyReasonCodes && Object.keys(data.policyReasonCodes).length > 0 ? (
                     <div className="space-y-2">
                       {Object.entries(data.policyReasonCodes)
                         .sort(([, a], [, b]) => b - a)
                         .map(([code, count]) => (
-                          <div key={code} className="flex justify-between text-sm">
-                            <span className="text-zinc-400 font-mono text-xs">{code}</span>
-                            <span className="text-white font-medium">{count}</span>
+                          <div key={code} className="flex justify-between text-[13px]">
+                            <span className="text-[var(--text-muted)] font-mono text-[12px]">{code}</span>
+                            <span className="font-mono font-medium">{count}</span>
                           </div>
                         ))}
                     </div>
                   ) : (
-                    <p className="text-zinc-500 text-sm">No policy events recorded</p>
+                    <p className="text-[13px] text-[var(--text-muted)]">No policy events recorded.</p>
                   )}
                 </div>
               </div>
@@ -201,37 +212,37 @@ export default function AIDashboard() {
 
             {/* Active Model Config */}
             <section>
-              <h2 className="text-lg font-semibold text-zinc-200 mb-4 flex items-center gap-2">
-                <Brain className="w-5 h-5 text-purple-400" />
-                Active Model Configuration
+              <h2 className="text-[18px] font-medium mb-4 flex items-center gap-2">
+                <Brain className="w-4 h-4 text-[var(--accent)]" />
+                Active model configuration
               </h2>
               {data.activeModel ? (
-                <div className="glass-dark p-6 rounded-2xl border border-zinc-800">
+                <div className="surface-card-sm">
                   <div className="grid md:grid-cols-3 gap-4 mb-4">
                     <div>
-                      <p className="text-zinc-500 text-xs uppercase tracking-wider">Model Name</p>
-                      <p className="text-white font-mono text-sm mt-1">{data.activeModel.model_name}</p>
+                      <p className="eyebrow mb-1">Model name</p>
+                      <p className="font-mono text-[13px]">{data.activeModel.model_name}</p>
                     </div>
                     <div>
-                      <p className="text-zinc-500 text-xs uppercase tracking-wider">Version</p>
-                      <p className="text-white font-mono text-sm mt-1">{data.activeModel.version}</p>
+                      <p className="eyebrow mb-1">Version</p>
+                      <p className="font-mono text-[13px]">{data.activeModel.version}</p>
                     </div>
                     <div>
-                      <p className="text-zinc-500 text-xs uppercase tracking-wider">Last Updated</p>
-                      <p className="text-white text-sm mt-1">
+                      <p className="eyebrow mb-1">Last updated</p>
+                      <p className="text-[13px]">
                         {data.activeModel.updated_at && new Date(data.activeModel.updated_at).toLocaleString()}
                       </p>
                     </div>
                   </div>
 
                   {data.activeModel.weights && (
-                    <div className="mt-4 pt-4 border-t border-zinc-800">
-                      <p className="text-zinc-400 text-sm font-medium mb-2">Scoring Weights</p>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
+                      <p className="eyebrow-strong mb-3">Scoring weights</p>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                         {Object.entries(data.activeModel.weights).map(([key, val]) => (
-                          <div key={key} className="bg-zinc-900 rounded-lg px-3 py-2">
-                            <p className="text-zinc-500 text-xs">{key}</p>
-                            <p className="text-white font-mono text-sm">{typeof val === 'number' ? val.toFixed(2) : JSON.stringify(val)}</p>
+                          <div key={key} className="rounded-[4px] px-3 py-2" style={{ background: 'var(--bg-sunken)' }}>
+                            <p className="text-[11px] text-[var(--text-muted)] font-mono uppercase tracking-wider">{key}</p>
+                            <p className="font-mono text-[13px] font-medium">{typeof val === 'number' ? val.toFixed(2) : JSON.stringify(val)}</p>
                           </div>
                         ))}
                       </div>
@@ -239,13 +250,13 @@ export default function AIDashboard() {
                   )}
 
                   {data.activeModel.thresholds && (
-                    <div className="mt-4 pt-4 border-t border-zinc-800">
-                      <p className="text-zinc-400 text-sm font-medium mb-2">Thresholds</p>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
+                      <p className="eyebrow-strong mb-3">Thresholds</p>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                         {Object.entries(data.activeModel.thresholds).map(([key, val]) => (
-                          <div key={key} className="bg-zinc-900 rounded-lg px-3 py-2">
-                            <p className="text-zinc-500 text-xs">{key}</p>
-                            <p className="text-white font-mono text-sm">{typeof val === 'number' ? val.toFixed(3) : JSON.stringify(val)}</p>
+                          <div key={key} className="rounded-[4px] px-3 py-2" style={{ background: 'var(--bg-sunken)' }}>
+                            <p className="text-[11px] text-[var(--text-muted)] font-mono uppercase tracking-wider">{key}</p>
+                            <p className="font-mono text-[13px] font-medium">{typeof val === 'number' ? val.toFixed(3) : JSON.stringify(val)}</p>
                           </div>
                         ))}
                       </div>
@@ -253,18 +264,18 @@ export default function AIDashboard() {
                   )}
                 </div>
               ) : (
-                <div className="glass-dark p-6 rounded-2xl border border-zinc-800 text-center">
-                  <Brain className="w-10 h-10 text-zinc-600 mx-auto mb-2" />
-                  <p className="text-zinc-500 text-sm">No active model configuration found</p>
-                  <p className="text-zinc-600 text-xs mt-1">A model config will appear after the feedback aggregator runs</p>
+                <div className="surface-card-sm text-center py-8">
+                  <Brain className="w-8 h-8 text-[var(--text-muted)] mx-auto mb-2" />
+                  <p className="text-[13px] text-[var(--text-muted)]">No active model configuration found.</p>
+                  <p className="text-[12px] text-[var(--text-muted)] mt-1">A model config will appear after the feedback aggregator runs.</p>
                 </div>
               )}
             </section>
           </div>
         ) : (
-          <div className="text-center py-20 glass-dark rounded-2xl border border-zinc-800">
-            <Brain className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-            <p className="text-zinc-400 text-lg">Failed to load dashboard data</p>
+          <div className="surface-card-sm text-center py-12">
+            <Brain className="w-10 h-10 text-[var(--text-muted)] mx-auto mb-4" />
+            <p className="text-[14px] text-[var(--text-muted)]">Failed to load dashboard data.</p>
           </div>
         )}
       </div>
