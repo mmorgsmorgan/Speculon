@@ -17,7 +17,26 @@
   --accent-soft-hover: #A8DCD2;
   --accent-ink: #1F3A33;
   --danger: #B0524B;
+  --danger-soft: #F2DCDA;
+  --danger-ink: #5A211B;
   --grid: rgba(17, 17, 17, 0.05);
+  --overlay: rgba(17, 17, 17, 0.55);
+
+  /* Type scale (px) — codified from existing arbitrary sizes */
+  --text-caption: 12px;
+  --text-meta:    13px;
+  --text-body:    14px;
+  --text-emphasis:15px;
+  --text-label:   18px;
+  --text-h3:      22px;
+  --text-metric:  28px;
+  --text-h2:      28px;
+  --text-h1:      36px;
+
+  /* Font weights — semantic roles */
+  --weight-body:     400;
+  --weight-emphasis: 500;
+  --weight-heading:  600;
 
   /* Next.js bridges */
   --background: var(--bg);
@@ -38,7 +57,10 @@
   --accent-soft-hover: #294A41;
   --accent-ink: #BCE7DF;
   --danger: #E08A82;
+  --danger-soft: #3A1F1C;
+  --danger-ink: #F2DCDA;
   --grid: rgba(242, 242, 242, 0.06);
+  --overlay: rgba(0, 0, 0, 0.65);
 
   --background: var(--bg);
   --foreground: var(--text);
@@ -270,3 +292,20 @@ body {
 
 .text-danger { color: var(--danger); }
 .text-muted { color: var(--text-muted); }
+
+/* ────────────────────────────────────────────────────────────
+   Overlay / modal backdrop
+   ──────────────────────────────────────────────────────────── */
+.scrim {
+  background: var(--overlay);
+  backdrop-filter: blur(4px);
+}
+
+/* Danger soft callout — for admin alerts/warnings */
+.callout-danger {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-soft);
+  padding: 16px;
+}

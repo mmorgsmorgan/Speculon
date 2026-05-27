@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "lint:design": "node scripts/check-design-tokens.cjs",
     "seed": "node scripts/seed.js"
   },
   "dependencies": {
