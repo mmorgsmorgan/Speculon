@@ -57,10 +57,7 @@ export default function ApprovalVoteModal({ market, userId, onClose, onVoteSucce
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(17, 17, 17, 0.55)', backdropFilter: 'blur(4px)' }}
-    >
+    <div className="scrim fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
         className="w-full max-w-md rounded-3xl p-8"
         style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
